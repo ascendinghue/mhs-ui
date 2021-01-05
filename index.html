@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+  <!--
+    WARNING! Make sure that you match all Quasar related
+    tags to the same version! (Below it's "@1.14.3")
+  -->
+
+  <head>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons|Material+Icons+Outlined|Material+Icons+Round|Material+Icons+Sharp" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/animate.css@^4.0.0/animate.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/quasar@1.14.3/dist/quasar.min.css" rel="stylesheet" type="text/css">
+    <link href="app.css" rel="stylesheet" type="text/css">
+  </head>
+
+  <body style="background-color: #E7E7E7">
+    <div id="q-app">
+
+      <q-layout view="hHh lpR fFf">
+
+        <q-drawer v-model="drawerOpen" side="right" :width="$q.screen.width * 0.9" overlay elevated>
+
+          <q-btn label="Back" class="q-ma-sm" icon="keyboard_arrow_left" color="primary" @click="drawerOpen = false"></q-btn>
+
+          <div class="row">
+            <div class="col-12 q-pa-md">
+
+              <template v-if="drawerContent === 'search'">
+                <!-- <div class="row q-ma-sm text-subtitle2">SEARCH RESULTS</div>
+                <div class="row">
+                  <q-input class="q-pa-sm col-4" bg-color="white" label="Search" outlined></q-input>
+                  <q-btn color="primary" label="Search Again" class="q-ma-md" @click="search()"></q-btn>
+                </div> -->
+                <q-table class="q-ma-sm" title="Search Results" selection="multiple" :selected.sync="selected" :data="searchResultsData" :loading="searchResultsLoading" :columns="columns" row-key="id">
+                  <template v-slot:top-right>
+                    <q-input filled dense debounce="300" placeholder="Search" clearable>
+                      <template v-slot:append><q-icon name="search"></q-icon></template>
+                    </q-input>
+                    <q-btn color="primary" label="Search Again" class="q-ma-md" @click="search()"></q-btn>
+                  </template>
+                  <template v-slot:bottom>
+                    <q-btn color="primary" label="Remove Selected from Project" class="q-ma-md"></q-btn>
+                    <q-btn color="primary" label="Add Selected to Group" class="q-ma-md"></q-btn>
+                    <q-select outlined dense v-model="selectedGroup" :options="groupOptions" label="Group" class="q-ma-md col-2"></q-select>
+                  </template>
+                </q-table>
+              </template>
+        
+              <template v-else-if="drawerContent === 'names'">
+                <q-table class="q-ma-sm" title="Names" selection="multiple" :selected.sync="selected" :data="nameData" :columns="nameColumns" :filter="namesFilter" row-key="id">
+                  <template v-slot:top-right>
+                    <q-btn color="primary" label="Create New" class="q-ma-md"></q-btn>
+                    <q-input filled dense debounce="300" v-model="namesFilter" placeholder="Search" clearable>
+                      <template v-slot:append><q-icon name="search"></q-icon></template>
+                    </q-input>
+                  </template>
+                  <template v-slot:body-cell-actions="props">
+                    <q-td :props="props">
+                      <q-btn dense round class="q-ma-sm" icon="open_in_new" @click="editName(props.row)"></q-btn>
+                      <q-btn dense round class="q-ma-sm" icon="delete"></q-btn>
+                    </q-td>
+                  </template>
+                </q-table>
+              </template>
+
+              <template v-else-if="drawerContent === 'subjects'">
+                <q-table class="q-ma-sm" title="Subjects" selection="multiple" :selected.sync="selected" :data="subjectsData" :columns="subjectColumns" :filter="subjectsFilter" row-key="id">
+                  <template v-slot:top-right>
+                    <q-btn color="primary" label="Create New" class="q-ma-md"></q-btn>
+                    <q-input filled dense debounce="300" v-model="subjectsFilter" placeholder="Search" clearable>
+                      <template v-slot:append><q-icon name="search"></q-icon></template>
+                    </q-input>
+                  </template>
+                  <template v-slot:body-cell-actions="props">
+                    <q-td :props="props">
+                      <q-btn dense round class="q-ma-sm" icon="open_in_new" @click="editSubject(props.row)"></q-btn>
+                      <q-btn dense round class="q-ma-sm" icon="delete"></q-btn>
+                    </q-td>
+                  </template>
+                </q-table>
+              </template>
+
+              <template v-else-if="drawerContent === 'aliases'">
+                <q-table class="q-ma-sm" title="Aliases" selection="multiple" :selected.sync="selected" :data="aliasesData" :columns="aliasColumns" :filter="aliasesFilter" row-key="id">
+                  <template v-slot:top-right>
+                    <q-btn color="primary" label="Create NEW" class="q-ma-md"></q-btn>
+                    <q-input filled dense debounce="300" v-model="aliasesFilter" placeholder="Search" clearable>
+                      <template v-slot:append><q-icon name="search"></q-icon></template>
+                    </q-input>
+                  </template>
+                  <template v-slot:body-cell-actions="props">
+                    <q-td :props="props">
+                      <q-btn dense round class="q-ma-sm" icon="open_in_new" @click="editAlias(props.row)"></q-btn>
+                      <q-btn dense round class="q-ma-sm" icon="delete"></q-btn>
+                    </q-td>
+                  </template>
+                </q-table>
+              </template>
+
+              <template v-else-if="drawerContent === 'group'">
+
+              </template>
+
+            </div>
+          </div>  
+
+          <q-inner-loading :showing="loading"></q-inner-loading>
+        </q-drawer>
+    
+        <q-page-container>
+
+          <div class="row">
+            <div class="col-6 q-pa-md">
+
+              <div class="row q-py-xs q-px-md">
+                <a href="index.html">Project Home</a> &nbsp;|&nbsp;
+                <a @click="names()" href="#">Names</a> &nbsp;|&nbsp;
+                <a @click="subjects()" href="#">Subjects</a> &nbsp;|&nbsp;
+                <a @click="aliases()" href="#">Aliases</a> &nbsp;
+              </div>
+
+              <div class="row">
+                <div class="text-h3 q-py-md q-px-md">Names Manager</div>
+              </div>
+
+              <div class="row">
+                <q-btn class="q-ma-sm" color="primary" icon="add" label="New Name" @click="showAddNameModal = true"></q-btn>
+              </div>
+
+              <div class="row">
+                <q-input class="q-pa-sm col-4" label="Search" bg-color="white" outlined>
+                  <template v-slot:append><q-icon name="search"></q-icon></template>
+                </q-input>
+                <q-btn color="primary" label="Search" class="q-ma-md" @click="search()"></q-btn>
+              </div>
+              
+
+              <q-card class="q-ma-sm">
+                <q-card-section>
+                  <div class="text-h5">GROUPS</div>
+                </q-card-section>
+                <q-card-section v-for="group in groupData">
+                  <span class="text-h6">{{group.name}}</span>&nbsp;&nbsp;&nbsp;<a @click="viewGroup()" href="#">view</a>
+                </q-card-section>
+              </q-card>
+
+            </div>
+            <div class="col-6 q-pa-md">
+
+              <q-table class="q-ma-sm" title="RECENTLY ADDED NAMES" :data="nameData" :columns="columns" row-key="name"></q-table>
+
+              <q-table class="q-ma-sm" title="THIS PROJECT'S NAMES" :data="nameData" :columns="columns" row-key="name"></q-table>
+
+            </div>
+          </div>
+
+
+
+          <q-dialog v-model="showAddNameModal" full-width persistent>
+            <q-card>
+              <q-card-section>
+                <div class="row">
+                  <div class="text-h3 q-py-md q-px-md">Add New Name</div>
+                </div>
+                <div class="row">
+                  <div class="col-3 q-py-sm q-px-md">
+                    <q-input class="full-width" filled v-model="name.family_name" label="Family Name"></q-input>
+                  </div>
+                  <div class="col-3 q-py-sm q-px-md">
+                    <q-input class="full-width" filled v-model="name.given_name" label="Given Name"></q-input>
+                  </div>
+                  <div class="col-3 q-py-sm q-px-md">
+                    <q-input class="full-width" filled v-model="name.maiden_name" label="Maiden Name"></q-input>
+                  </div>
+                  <div class="col-3 q-py-sm q-px-md">
+                    <q-input class="full-width" filled v-model="name.middle_name" label="Middle Name"></q-input>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-3 q-py-sm q-px-md">
+                    <q-input class="full-width" filled v-model="name.suffix" label="Suffix"></q-input>
+                  </div>
+                  <div class="col-3 q-py-sm q-px-md">
+                    <q-input class="full-width" filled v-model="name.keywords" label="Keywords"></q-input>
+                  </div>
+                  <div class="col-3 q-py-sm q-px-md">
+                    <q-input class="full-width" filled v-model="name.date_of_birth" mask="date" label="Date of Birth">
+                      <template v-slot:append>
+                        <q-icon name="event" class="cursor-pointer">
+                          <q-popup-proxy ref="qDateProxy" transition-show="scale" transition-hide="scale">
+                            <q-date v-model="name.date_of_birth">
+                              <div class="row items-center justify-end">
+                                <q-btn v-close-popup label="Close" color="primary" flat />
+                              </div>
+                            </q-date>
+                          </q-popup-proxy>
+                        </q-icon>
+                      </template>
+                    </q-input>
+                  </div>
+                  <div class="col-3 q-py-sm q-px-md">
+                    <q-input class="full-width" filled v-model="name.date_of_death" mask="date" label="Date of Death">
+                      <template v-slot:append>
+                        <q-icon name="event" class="cursor-pointer">
+                          <q-popup-proxy ref="qDateProxy" transition-show="scale" transition-hide="scale">
+                            <q-date v-model="name.date_of_death">
+                              <div class="row items-center justify-end">
+                                <q-btn v-close-popup label="Close" color="primary" flat />
+                              </div>
+                            </q-date>
+                          </q-popup-proxy>
+                        </q-icon>
+                      </template>
+                    </q-input>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-3 q-py-sm q-px-md">
+                    <q-input class="full-width" filled v-model="name.public_notes" label="Public Notes" type="textarea"></q-input>
+                  </div>
+                  <div class="col-3 q-py-sm q-px-md">
+                    <q-input class="full-width" filled v-model="name.staff_notes" label="Staff Notes" type="textarea"></q-input>
+                  </div>
+                  <div class="col-3 q-py-sm q-px-md">
+                    <q-input class="full-width" filled v-model="name.bio_filename" label="Bio Filename"></q-input>
+                  </div>
+                </div>
+              </q-card-section>
+
+              <q-separator></q-separator>
+
+              <q-card-actions align="right">
+                <q-btn label="Cancel" outline @click="showAddNameModal = false"></q-btn>
+                <q-btn label="Save" color="primary" @click="saveName()"></q-btn>
+              </q-card-actions>
+
+              <q-inner-loading :showing="loading"></q-inner-loading>
+            </q-card>
+          </q-dialog>
+
+        </q-page-container>
+        
+      </q-layout>
+
+
+    </div>
+
+    <!-- Add the following at the end of your body tag -->
+    
+    <script src="https://cdn.jsdelivr.net/npm/quasar@1.14.3/dist/quasar.ie.polyfills.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@^2.0.0/dist/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quasar@1.14.3/dist/quasar.umd.modern.min.js"></script>
+    
+    <script type="module" src="names-manager.js"></script>
+  </body>
+</html>
