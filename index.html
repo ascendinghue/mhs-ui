@@ -48,8 +48,8 @@
                       <q-btn round class="q-ma-sm" icon="edit" @click="editName(props.row)" size="sm">
                         <q-tooltip>Edit</q-tooltip>
                       </q-btn>
-                      <q-btn round class="q-ma-sm" icon="delete" size="sm" @click="deleteName(props.row)">
-                        <q-tooltip>Delete</q-tooltip>
+                      <q-btn round class="q-ma-sm" icon="open_in_new" size="sm" @click="viewName(props.row)">
+                        <q-tooltip>View</q-tooltip>
                       </q-btn>
                     </q-td>
                   </template>
@@ -57,7 +57,7 @@
               </template>
         
               <template v-else-if="drawerContent === 'names'">
-                <q-table class="q-ma-sm" title="Names" selection="multiple" :selected.sync="selectedNames" :data="nameData" :columns="nameColumns" :filter="namesFilter" row-key="id" :loading="loadingNames">
+                <q-table class="q-ma-sm" title="Names" selection="multiple" :selected.sync="selectedNames" :data="nameData" :columns="nameColumns" :filter-method="namesFilterMethod" :filter="namesFilter" row-key="id" :loading="loadingNames">
                   <template v-slot:top-right>
                     <q-input filled dense debounce="300" v-model="namesFilter" placeholder="Search" clearable class="q-ma-sm">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
@@ -71,11 +71,11 @@
                   </template>
                   <template v-slot:body-cell-actions="props">
                     <q-td :props="props">
-                      <q-btn dense round class="q-ma-sm" icon="edit" @click="editName(props.row)">
+                      <q-btn round class="q-ma-sm" icon="edit" size="sm" @click="editName(props.row)">
                         <q-tooltip>Edit</q-tooltip>
                       </q-btn>
-                      <q-btn dense round class="q-ma-sm" icon="delete" @click="deleteName(props.row)">
-                        <q-tooltip>Delete</q-tooltip>
+                      <q-btn round class="q-ma-sm" icon="open_in_new" size="sm" @click="viewName(props.row)">
+                        <q-tooltip>View</q-tooltip>
                       </q-btn>
                     </q-td>
                   </template>
@@ -97,11 +97,11 @@
                   </template>
                   <template v-slot:body-cell-actions="props">
                     <q-td :props="props">
-                      <q-btn dense round class="q-ma-sm" icon="edit" @click="editSubject(props.row)">
+                      <q-btn round class="q-ma-sm" icon="edit" size="sm" @click="editSubject(props.row)">
                         <q-tooltip>Edit</q-tooltip>
                       </q-btn>
-                      <q-btn dense round class="q-ma-sm" icon="delete" @click="deleteSubject(props.row)">
-                        <q-tooltip>Delete</q-tooltip>
+                      <q-btn round class="q-ma-sm" icon="open_in_new" size="sm" @click="viewSubject(props.row)">
+                        <q-tooltip>View</q-tooltip>
                       </q-btn>
                     </q-td>
                   </template>
@@ -151,9 +151,9 @@
 
               <div class="row q-py-xs q-px-md">
                 <a href="index.html">Project Home</a> &nbsp;|&nbsp;
-                <a @click="openDrawer('names')" href="#">Names</a> &nbsp;|&nbsp;
-                <a @click="openDrawer('subjects')" href="#">Subjects</a> &nbsp;|&nbsp;
-                <a @click="openDrawer('aliases')" href="#">Aliases</a> &nbsp;
+                <a @click="openDrawer('names')" href="#">Project Names</a> &nbsp;|&nbsp;
+                <a @click="openDrawer('subjects')" href="#">Project Subjects</a> &nbsp;|&nbsp;
+                <a @click="openDrawer('aliases')" href="#">Project Aliases</a> &nbsp;
               </div>
 
               <div class="row">
@@ -168,6 +168,7 @@
                 <q-input class="q-pa-sm col-4" label="Search" bg-color="white" outlined>
                   <template v-slot:append><q-icon name="search"></q-icon></template>
                 </q-input>
+                <q-toggle v-model="value" label="All Projects"></q-toggle>
                 <q-btn color="primary" label="Search" class="q-ma-md" @click="search()"></q-btn>
               </div>
               
@@ -198,14 +199,14 @@
                     <q-btn round class="q-ma-sm" icon="edit" @click="editName(props.row)" size="sm">
                       <q-tooltip>Edit</q-tooltip>
                     </q-btn>
-                    <q-btn round class="q-ma-sm" icon="delete" @click="deleteName(props.row)" size="sm">
-                      <q-tooltip>Delete</q-tooltip>
+                    <q-btn round class="q-ma-sm" icon="open_in_new" size="sm" @click="viewName(props.row)">
+                      <q-tooltip>View</q-tooltip>
                     </q-btn>
                   </q-td>
                 </template>
               </q-table>
 
-              <q-table class="q-ma-sm" title="THIS PROJECT'S NAMES" :data="nameData" :columns="nameColumns" row-key="name" :loading="loadingNames">
+              <q-table class="q-ma-sm" title="THIS PROJECT'S NAMES" :data="projectNameData" :columns="nameColumns" row-key="name" :loading="loadingNames">
                 <template v-slot:top-right>
                   <q-btn round flat icon="refresh" @click="getNames()" :loading="loadingNames" class="q-ma-sm">
                     <q-tooltip>Refresh List</q-tooltip>
@@ -216,8 +217,8 @@
                     <q-btn round class="q-ma-sm" icon="edit" @click="editName(props.row)" size="sm">
                       <q-tooltip>Edit</q-tooltip>
                     </q-btn>
-                    <q-btn round class="q-ma-sm" icon="delete" @click="deleteName(props.row)" size="sm">
-                      <q-tooltip>Delete</q-tooltip>
+                    <q-btn round class="q-ma-sm" icon="open_in_new" size="sm" @click="viewName(props.row)">
+                      <q-tooltip>View</q-tooltip>
                     </q-btn>
                   </q-td>
                 </template>
@@ -326,7 +327,7 @@
             </q-card>
           </q-dialog>
 
-          <q-dialog v-model="showNameModal" persistent>
+          <q-dialog v-model="showEditNameModal" persistent>
             <q-card style="min-width: 1000px;">
               <q-card-section>
                 <q-form ref="nameForm" greedy>
@@ -341,10 +342,10 @@
                       <q-input class="full-width" filled v-model="name.given_name" label="Given Name" :rules="[val => (val !== null && val !== '' && val !== undefined) || 'Given Name is Required']"></q-input>
                     </div>
                     <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.maiden_name" label="Maiden Name" hint=""></q-input>
+                      <q-input class="full-width" filled v-model="name.middle_name" label="Middle Name" hint=""></q-input>
                     </div>
                     <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.middle_name" label="Middle Name" hint=""></q-input>
+                      <q-input class="full-width" filled v-model="name.maiden_name" label="Maiden Name" hint=""></q-input>
                     </div>
                   </div>
                   <div class="row">
@@ -352,33 +353,78 @@
                       <q-input class="full-width" filled v-model="name.suffix" label="Suffix" hint=""></q-input>
                     </div>
                     <div class="col-3 q-py-sm q-px-sm">
+                      <q-input class="full-width" filled v-model="name.variants" label="Variants" hint=""></q-input>
+                    </div>
+                    <div class="col-3 q-py-sm q-px-sm">
+                      <q-input class="full-width" filled v-model="name.professions" label="Professions" hint=""></q-input>
+                    </div>
+                    <div class="col-3 q-py-sm q-px-sm">
+                      <q-input class="full-width" filled v-model="name.title" label="Title" hint=""></q-input>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-2 q-py-sm q-px-sm">
+                      <q-input class="full-width" filled v-model="name.date_of_birth" mask="####-##-##" label="Date of Birth" hint=""></q-input>
+                    </div>
+                    <div class="col-2 q-py-sm q-px-sm">
+                      <q-input class="full-width" filled v-model="name.date_of_death" mask="####-##-##" label="Date of Death" hint=""></q-input>
+                    </div>
+                    <div class="col-4 q-py-sm q-px-sm">
+                      <q-input class="full-width" filled v-model="name.bio_filename" label="Bio Filename" hint=""></q-input>
+                    </div>
+                    <div class="col-4 q-py-sm q-px-sm">
                       <q-input class="full-width" filled v-model="name.keywords" label="Keywords" hint=""></q-input>
                     </div>
+                  </div>
+                  <!-- <div class="row">
+                    <div class="col-3 q-py-sm q-px-sm">&nbsp;</div>
                     <div class="col-3 q-py-sm q-px-sm">
                       <q-input class="full-width" filled v-model="name.date_of_birth" mask="####-##-##" label="Date of Birth" hint=""></q-input>
                     </div>
                     <div class="col-3 q-py-sm q-px-sm">
                       <q-input class="full-width" filled v-model="name.date_of_death" mask="####-##-##" label="Date of Death" hint=""></q-input>
                     </div>
+                  </div> -->
+                  
+                  <q-separator></q-separator>
+                  <div class="row">
+                    <div class="col-12 q-py-sm q-px-sm">
+                      <q-tabs v-model="tabNameNotes" active-color="primary" indicator-color="primary" align="justify" narrow-indicator>
+                        <q-tab name="public" label="Public Notes"></q-tab>
+                        <q-tab name="staff" label="Staff Notes"></q-tab>
+                      </q-tabs>
+                    </div>
                   </div>
                   <div class="row">
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.public_notes" label="Public Notes" type="textarea" hint=""></q-input>
+                    <div class="col-12 q-py-sm q-px-sm">
+                      <q-tab-panels v-model="tabNameNotes" animated>
+                        <q-tab-panel name="public">
+                          <q-input class="full-width" filled v-model="name.public_notes" label="Public Notes" type="textarea" hint=""></q-input>
+                        </q-tab-panel>
+                        <q-tab-panel name="staff">
+                          <q-input class="full-width" filled v-model="name.staff_notes" label="Staff Notes" type="textarea" hint=""></q-input>
+                        </q-tab-panel>
+                      </q-tab-panels>
                     </div>
-                    <div class="col-3 q-py-sm q-px-sm">
+
+                    <!-- <div class="col-12 q-py-sm q-px-sm">
+                      <q-input class="full-width" filled v-model="name.public_notes" label="Public Notes" type="textarea" hint=""></q-input>
+                    </div> -->
+                  </div>
+                  <!-- <div class="row">
+                    <div class="col-12 q-py-sm q-px-sm">
                       <q-input class="full-width" filled v-model="name.staff_notes" label="Staff Notes" type="textarea" hint=""></q-input>
                     </div>
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.bio_filename" label="Bio Filename" hint=""></q-input>
-                    </div>
-                  </div>
+                  </div> -->
                 </q-form>
               </q-card-section>
 
               <q-separator></q-separator>
 
-              <q-card-actions align="right">
-                <q-btn label="Cancel" outline @click="showNameModal = false"></q-btn>
+
+              <q-card-actions align="between">
+                <q-btn label="Delete" flat color="negative" align="left" @click="deleteName(); showEditNameModal = false"></q-btn>
+                <q-btn label="Cancel" outline @click="showEditNameModal = false"></q-btn>
                 <q-btn label="Save" color="primary" @click="saveName()"></q-btn>
               </q-card-actions>
 
@@ -386,6 +432,50 @@
             </q-card>
           </q-dialog>
 
+          <q-dialog v-model="showNameModal" persistent>
+            <q-card style="min-width: 700px;">
+              <q-card-section>
+                <div class="row">
+                  <div class="col-3 q-pa-sm text-bold text-left">Family Name:</div>
+                  <div class="col-3 q-pa-sm text-left">{{name.family_name}}</div>
+                  <div class="col-3 q-pa-sm text-bold text-left">Given Name:</div>
+                  <div class="col-3 q-pa-sm text-left">{{name.given_name}}</div>
+                </div>
+                <div class="row">
+                  <div class="col-3 q-pa-sm text-bold text-left">Maiden Name:</div>
+                  <div class="col-3 q-pa-sm text-left">{{name.maiden_name}}</div>
+                  <div class="col-3 q-pa-sm text-bold text-left">Middle Name:</div>
+                  <div class="col-3 q-pa-sm text-left">{{name.middle_name}}</div>
+                </div>
+                <div class="row">
+                  <div class="col-3 q-pa-sm text-bold text-left">Suffix:</div>
+                  <div class="col-3 q-pa-sm text-left">{{name.suffix}}</div>
+                  <div class="col-3 q-pa-sm text-bold text-left">Keywords:</div>
+                  <div class="col-3 q-pa-sm text-left">{{name.keywords}}</div>
+                </div>
+                <div class="row">
+                  <div class="col-3 q-pa-sm text-bold text-left">Date of Birth:</div>
+                  <div class="col-3 q-pa-sm text-left">{{name.date_of_birth}}</div>
+                  <div class="col-3 q-pa-sm text-bold text-left">Date of Death:</div>
+                  <div class="col-3 q-pa-sm text-left">{{name.date_of_death}}</div>
+                </div>
+                <div class="row"><q-separator class="q-ma-sm"></q-separator></div>
+                <div class="row">
+                  <q-input class="q-pa-sm full-width" filled readonly v-model="name.public_notes" label="Public Notes" type="textarea" hint=""></q-input>
+                </div>
+                <div class="row">
+                  <q-input class="q-pa-sm full-width" filled readonly v-model="name.staff_notes" label="Staff Notes" type="textarea" hint=""></q-input>
+                </div>
+              </q-card-section>
+
+              <q-separator></q-separator>
+
+              <q-card-actions align="center">
+                <q-btn label="Close" color="primary"  class="q-ma-xs" @click="showNameModal = false"></q-btn>
+              </q-card-actions>
+
+            </q-card>
+          </q-dialog>
         </q-page-container>
         
       </q-layout>

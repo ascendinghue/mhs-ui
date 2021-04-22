@@ -2,6 +2,9 @@ new Vue({
   el: '#q-app',
   data: function () {
     return {
+      value: false,
+      tabNameNotes: 'public',
+
       baseURL: 'http://primarysourcecoop.org/mhs-api/v1/',
       namesFilter: '',
       subjectsFilter: '',
@@ -17,12 +20,14 @@ new Vue({
       searchResultsLoading: false,
       drawerOpen: false,
       drawerContent: null,
+      showEditNameModal: false,
       showNameModal: false,
       modeNameModal: null,
       showSubjectModal: false,
       modeSubjectModal: null,
       showAliasModal: false,
       modeAliasModal: null,
+      selected: [],
       selectedGroup: null,
       aliasTypeOptions: [
         'spelling',
@@ -35,11 +40,16 @@ new Vue({
         middle_name: null,
         suffix: null,
         keywords: null,
+        variants: null,
+        professions: null,
+        title: null,
+
         date_of_birth: null,
         date_of_death: null,
         public_notes: null,
         staff_notes: null,
-        bio_filename: null
+        bio_filename: null,
+        name_key: null
       },
       subject: {
         subject_name: null,
@@ -59,28 +69,20 @@ new Vue({
         public_notes: null,
         staff_notes: null
       },
-      columns: [
-        { 
-          name: 'name', 
-          label: 'NAME', 
-          field: row => row.given_name + ' ' + row.family_name,
-          format: val => `${val}`,
-          sortable: true 
-        },
-        { name: 'birth', label: 'BIRTH', field: 'date_of_birth', sortable: true },
-        { name: 'death', label: 'DEATH', field: 'date_of_death', sortable: true }
-      ],
       nameColumns: [
         { 
           name: 'name', 
           label: 'NAME', 
-          field: row => row.given_name + ' ' + row.family_name,
+          field: row => row.given_name + ' ' + row.middle_name + ' ' + row.family_name,
           format: val => `${val}`,
           sortable: true 
         },
+        { name: 'maiden_name', label: 'MAIDEN NAME', field: 'maiden_name', sortable: true },
         { name: 'birth', label: 'BIRTH', field: 'date_of_birth', sortable: true },
         { name: 'death', label: 'DEATH', field: 'date_of_death', sortable: true },
-        { name: 'actions', label: '', field: '', align: 'center' }
+        { name: 'name_key', label: 'KEY', field: 'name_key', sortable: true },
+        { name: 'actions', label: '', field: '', align: 'center' },
+        
       ],
       subjectColumns: [
         { 
@@ -97,7 +99,7 @@ new Vue({
           align: 'left',
           sortable: true 
         },
-        { name: 'actions', label: 'Actions', field: '', align: 'center' }
+        { name: 'actions', label: '', field: '', align: 'center' }
       ],
       aliasColumns: [
         { 
@@ -128,6 +130,7 @@ new Vue({
       groupData: [],
       nameData: [],
       subjectData: [],
+      projectNameData: [],
       aliasData: []
     }
   },
@@ -142,6 +145,65 @@ new Vue({
   //   }
   // },
   methods: {
+    // sortByCreated (rows, sortBy, descending) {
+    //   const data = [ ...rows ]
+
+    //   data.sort((a, b) => (a.created_at > b.created_at) ? 1 : -1)
+
+    //   // if (sortBy) {
+    //   //   data.sort((a, b) => {
+    //   //     const x = descending ? b : a
+    //   //     const y = descending ? a : b
+
+    //   //     if (sortBy === 'name') {
+    //   //       // string sort
+    //   //       return x[sortBy] > y[sortBy] ? 1 : x[sortBy] < y[sortBy] ? -1 : 0
+    //   //     }
+    //   //     else {
+    //   //       // numeric sort
+    //   //       return parseFloat(x[sortBy]) - parseFloat(y[sortBy])
+    //   //     }
+    //   //   })
+    //   // }
+
+    //   return data
+    // },
+    namesFilterMethod () {
+      var namesFilter = this.namesFilter
+      return this.nameData.filter(function (name) {
+        if (name.family_name && name.family_name.includes(namesFilter)) {
+          return true
+        }else if (name.given_name && name.given_name.includes(namesFilter)){
+          return true
+        }else if (name.maiden_name && name.maiden_name.includes(namesFilter)){
+          return true
+        }else if (name.middle_name && name.middle_name.includes(namesFilter)){
+          return true
+        }else if (name.suffix && name.suffix.includes(namesFilter)){
+          return true
+        }else if (name.keywords && name.keywords.includes(namesFilter)){
+          return true
+        }else if (name.variants && name.variants.includes(namesFilter)){
+          return true
+        }else if (name.professions && name.professions.includes(namesFilter)){
+          return true
+        }else if (name.title && name.title.includes(namesFilter)){
+          return true
+        }else if (name.date_of_birth && name.date_of_birth.includes(namesFilter)){
+          return true
+        }else if (name.date_of_death && name.date_of_death.includes(namesFilter)){
+          return true
+        }else if (name.public_notes && name.public_notes.includes(namesFilter)){
+          return true
+        }else if (name.staff_notes && name.staff_notes.includes(namesFilter)){
+          return true
+        }else if (name.bio_filename && name.bio_filename.includes(namesFilter)){
+          return true
+        }else if (name.name_key && name.name_key.includes(namesFilter)){
+          return true
+        }
+      })
+    },
     viewGroup () {
       this.drawerContent = 'group'
       this.loading = true
@@ -174,6 +236,7 @@ new Vue({
               const response = await axios.patch(this.baseURL + 'names/' + this.name.id, this.name)
             }
             await this.getNames()
+            await this.getProjectNames()
             
             this.$q.notify({
               message: (this.modeNameModal === 'Add') ? 'Name created successfully' : `${this.name.given_name} ${this.name.family_name} updated successfully`,
@@ -181,7 +244,7 @@ new Vue({
             }, this)
 
             this.loading = false
-            this.showNameModal = false
+            this.showEditNameModal = false
           } catch (error) {
             this.loading = false
             if (error.response.status === 422) {
@@ -198,11 +261,16 @@ new Vue({
     },
     editName (name = null) {
       this.modeNameModal = (name) ? 'Edit' : 'Add'
+      this.showEditNameModal = true
+      this.name = {...name}
+    },
+    viewName (name) {
       this.showNameModal = true
       this.name = {...name}
     },
-    async deleteName (name)
+    async deleteName (name = null)
     {
+      name = (name) ? name : this.name
       this.$q.dialog({
         title: 'Confirm',
         message: `Are you sure you want to delete ${name.given_name} ${name.family_name}?`,
@@ -213,6 +281,7 @@ new Vue({
           this.loading = true
           await axios.delete(this.baseURL + 'names/' + name.id)
           await this.getNames()
+          await this.getProjectNames()
           this.loading = false
         } catch (error) {
           this.loading = false
@@ -293,8 +362,6 @@ new Vue({
       })
     },
     async addNamesToGroup() {
-      console.log(this.selectedGroup)
-      console.log(this.groupOptions)
       this.loading = true
 
       this.selectedNames.forEach(name => {
@@ -339,8 +406,18 @@ new Vue({
     async getNames() {
       this.loadingNames = true
       try {
-        const response = await axios.get(this.baseURL + 'names');
+        const response = await axios.get(this.baseURL + 'names' + '?per_page=10000');
         this.nameData = response.data.data
+      } catch (error) {
+        console.error(error)
+      }
+      this.loadingNames = false
+    },
+    async getProjectNames() {
+      this.loadingNames = true
+      try {
+        const response = await axios.get(this.baseURL + 'projects/1/names' + '?per_page=10000');
+        this.projectNameData = response.data
       } catch (error) {
         console.error(error)
       }
@@ -348,7 +425,7 @@ new Vue({
     },
     async getSubjects() {
       try {
-        const response = await axios.get(this.baseURL + 'subjects');
+        const response = await axios.get(this.baseURL + 'subjects' + '?per_page=10000');
         this.subjectData = response.data.data
       } catch (error) {
         console.error(error)
@@ -357,9 +434,8 @@ new Vue({
     async getGroups() {
       this.loadingGroups = true
       try {
-        const response = await axios.get(this.baseURL + 'lists');
+        const response = await axios.get(this.baseURL + 'lists' + '?per_page=10000');
         this.groupData = response.data.data
-        console.log(this.groupData)
       } catch (error) {
         console.error(error)
       }
@@ -368,7 +444,7 @@ new Vue({
     async getAliases() {
       this.loadingAliases = true
       try {
-        const response = await axios.get(this.baseURL + 'aliases');
+        const response = await axios.get(this.baseURL + 'aliases' + '?per_page=10000');
         this.aliasData = response.data.data
       } catch (error) {
         console.error(error)
@@ -378,6 +454,7 @@ new Vue({
   },
   created () {
     this.getNames()
+    this.getProjectNames()
     this.getGroups()
     this.getAliases()
     this.getSubjects()
