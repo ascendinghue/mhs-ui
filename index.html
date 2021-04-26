@@ -26,11 +26,6 @@
             <div class="col-12 q-pa-md">
 
               <template v-if="drawerContent === 'search'">
-                <!-- <div class="row q-ma-sm text-subtitle2">SEARCH RESULTS</div>
-                <div class="row">
-                  <q-input class="q-pa-sm col-4" bg-color="white" label="Search" outlined></q-input>
-                  <q-btn color="primary" label="Search Again" class="q-ma-md" @click="search()"></q-btn>
-                </div> -->
                 <q-table class="q-ma-sm" title="Search Results" selection="multiple" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="nameColumns" row-key="id">
                   <template v-slot:top-right>
                     <q-input filled dense debounce="300" placeholder="Search" clearable>
@@ -39,7 +34,8 @@
                     <q-btn color="primary" label="Search Again" class="q-ma-md" @click="search()"></q-btn>
                   </template>
                   <template v-slot:bottom>
-                    <q-btn color="primary" label="Remove Selected from Project" class="q-ma-md"></q-btn>
+                    <!-- <q-btn color="primary" label="Remove Selected from Project" class="q-ma-md"></q-btn> -->
+                    <q-btn color="primary" label="Add Selected to Project" class="q-ma-md" @click="addProjectNames()"></q-btn>
                     <q-btn color="primary" label="Add Selected to Group" class="q-ma-md" @click="addNamesToGroup()"></q-btn>
                     <q-select outlined dense emit-value map-options option-value="id" option-label="name" v-model="selectedGroup" :options="groupData" label="Group" class="q-ma-md col-2"></q-select>
                   </template>
@@ -57,9 +53,9 @@
               </template>
         
               <template v-else-if="drawerContent === 'names'">
-                <q-table class="q-ma-sm" title="Names" selection="multiple" :selected.sync="selectedNames" :data="nameData" :columns="nameColumns" :filter-method="namesFilterMethod" :filter="namesFilter" row-key="id" :loading="loadingNames">
+                <q-table class="q-ma-sm" title="Names" selection="multiple" :selected.sync="selectedProjectNames" :data="projectNameData" :columns="nameColumns" :filter-method="projectNamesFilterMethod" :filter="projectNamesFilter" row-key="id" :loading="loadingNames">
                   <template v-slot:top-right>
-                    <q-input filled dense debounce="300" v-model="namesFilter" placeholder="Search" clearable class="q-ma-sm">
+                    <q-input filled dense debounce="300" v-model="projectNamesFilter" placeholder="Search" clearable class="q-ma-sm">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
                     </q-input>
                     <q-btn round flat icon="note_add" class="q-ma-sm" @click="editName()">
@@ -68,6 +64,9 @@
                     <q-btn round flat icon="refresh" @click="getNames()" :loading="loadingNames" class="q-ma-sm">
                       <q-tooltip>Refresh List</q-tooltip>
                     </q-btn>
+                  </template>
+                  <template v-slot:bottom>
+                    <q-btn color="primary" label="Remove Selected from Project" class="q-ma-md" @click="removeProjectNames()"></q-btn>
                   </template>
                   <template v-slot:body-cell-actions="props">
                     <q-td :props="props">

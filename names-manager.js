@@ -4,13 +4,16 @@ new Vue({
     return {
       value: false,
       tabNameNotes: 'public',
+      project: 1,
 
       baseURL: 'http://primarysourcecoop.org/mhs-api/v1/',
       namesFilter: '',
+      projectNamesFilter: '',
       subjectsFilter: '',
       aliasesFilter: '',
       model: 'one',
       selectedNames: [],
+      selectedProjectNames: [],
       loading: false,
       loadingNames: false,
       loadingGroups: false,
@@ -41,7 +44,7 @@ new Vue({
         suffix: null,
         keywords: null,
         variants: null,
-        professions: null,
+        professions: '',
         title: null,
 
         date_of_birth: null,
@@ -73,7 +76,7 @@ new Vue({
         { 
           name: 'name', 
           label: 'NAME', 
-          field: row => row.given_name + ' ' + row.middle_name + ' ' + row.family_name,
+          field: row => (row.middle_name) ? row.given_name + ' ' + row.middle_name + ' ' + row.family_name : row.given_name  + ' ' + row.family_name,
           format: val => `${val}`,
           sortable: true 
         },
@@ -134,72 +137,39 @@ new Vue({
       aliasData: []
     }
   },
-  // computed: {
-  //   groupOptions () {
-  //     return this.groupData.map(function (group) {
-  //       return {
-  //         label: group.name,
-  //         value: group.id
-  //       }
-  //     })
-  //   }
-  // },
   methods: {
-    // sortByCreated (rows, sortBy, descending) {
-    //   const data = [ ...rows ]
-
-    //   data.sort((a, b) => (a.created_at > b.created_at) ? 1 : -1)
-
-    //   // if (sortBy) {
-    //   //   data.sort((a, b) => {
-    //   //     const x = descending ? b : a
-    //   //     const y = descending ? a : b
-
-    //   //     if (sortBy === 'name') {
-    //   //       // string sort
-    //   //       return x[sortBy] > y[sortBy] ? 1 : x[sortBy] < y[sortBy] ? -1 : 0
-    //   //     }
-    //   //     else {
-    //   //       // numeric sort
-    //   //       return parseFloat(x[sortBy]) - parseFloat(y[sortBy])
-    //   //     }
-    //   //   })
-    //   // }
-
-    //   return data
-    // },
-    namesFilterMethod () {
-      var namesFilter = this.namesFilter
-      return this.nameData.filter(function (name) {
-        if (name.family_name && name.family_name.includes(namesFilter)) {
+    projectNamesFilterMethod () {
+      var filter = this.projectNamesFilter
+      return this.projectNameData.filter(function (name) {
+        if (name.family_name && name.family_name.includes(filter)) {
           return true
-        }else if (name.given_name && name.given_name.includes(namesFilter)){
+        }else if (name.given_name && name.given_name.includes(filter)){
           return true
-        }else if (name.maiden_name && name.maiden_name.includes(namesFilter)){
+        }else if (name.maiden_name && name.maiden_name.includes(filter)){
           return true
-        }else if (name.middle_name && name.middle_name.includes(namesFilter)){
+        }else if (name.middle_name && name.middle_name.includes(filter)){
           return true
-        }else if (name.suffix && name.suffix.includes(namesFilter)){
+        }else if (name.suffix && name.suffix.includes(filter)){
           return true
-        }else if (name.keywords && name.keywords.includes(namesFilter)){
+        }else if (name.keywords && name.keywords.includes(filter)){
           return true
-        }else if (name.variants && name.variants.includes(namesFilter)){
+        }else if (name.variants && name.variants.includes(filter)){
           return true
-        }else if (name.professions && name.professions.includes(namesFilter)){
+        }else if (name.professions && name.professions.includes(filter)){
           return true
-        }else if (name.title && name.title.includes(namesFilter)){
+        }else if (name.title && name.title.includes(filter)){
           return true
-        }else if (name.date_of_birth && name.date_of_birth.includes(namesFilter)){
+        }else if (name.date_of_birth && name.date_of_birth.includes(filter)){
           return true
-        }else if (name.date_of_death && name.date_of_death.includes(namesFilter)){
+        }else if (name.date_of_death && name.date_of_death.includes(filter)){
           return true
-        }else if (name.public_notes && name.public_notes.includes(namesFilter)){
+        }else if (name.public_notes && name.public_notes.includes(filter)){
           return true
-        }else if (name.staff_notes && name.staff_notes.includes(namesFilter)){
+        }else if (name.staff_notes && name.staff_notes.includes(filter)){
           return true
-        }else if (name.bio_filename && name.bio_filename.includes(namesFilter)){
+        }else if (name.bio_filename && name.bio_filename.includes(filter)){
           return true
-        }else if (name.name_key && name.name_key.includes(namesFilter)){
+        }else if (name.name_key && name.name_key.includes(filter)){
           return true
         }
       })
@@ -361,6 +331,41 @@ new Vue({
       this.$refs.aliasForm.validate().then(async success => {
       })
     },
+    async removeProjectNames() {
+      this.loading = true
+      try {
+        await axios.patch(this.baseURL + 'projects/' + this.project + '/names', {
+          name_ids: this.selectedProjectNames.map(name => name.id)
+        })
+        await this.getProjectNames()
+      } catch (error) {
+        this.$q.notify({
+          message: 'Sorry, something went wrong',
+          color: 'red'
+        }, this)
+      }
+      
+      this.selectedNames = []
+      this.loading = false
+    },
+    async addProjectNames() {
+      this.loading = true
+      try {
+        await axios.patch(this.baseURL + 'projects/' + this.project + '/names', {
+          name_ids: this.selectedNames.map(name => name.id)
+        })
+        await this.getProjectNames()
+      } catch (error) {
+        this.$q.notify({
+          message: 'Sorry, something went wrong',
+          color: 'red'
+        }, this)
+      }
+      
+      this.selectedNames = []
+      this.loading = false
+    },
+
     async addNamesToGroup() {
       this.loading = true
 
@@ -368,36 +373,12 @@ new Vue({
         try {
           // const response = await axios.patch(this.baseURL + 'lists/' + this.subject.id, this.subject)
         } catch (error) {
-          
+            this.$q.notify({
+              message: 'Sorry, something went wrong',
+              color: 'red'
+            }, this)
         }
-      });
-
-      // try {
-      //   if (this.modeSubjectModal === 'Add') {
-      //     const response = await axios.post(this.baseURL + 'subjects', this.subject)
-      //   }else{
-      //     const response = await axios.patch(this.baseURL + 'subjects/' + this.subject.id, this.subject)
-      //   }
-      //   await this.getSubjects()
-        
-      //   this.$q.notify({
-      //     message: (this.modeSubjectModal === 'Add') ? 'Subject created successfully' : `${this.subject.given_name} ${this.subject.family_name} updated successfully`,
-      //     color: 'green'
-      //   }, this)
-
-      //   this.loading = false
-      //   this.showSubjectModal = false
-      // } catch (error) {
-      //   this.loading = false
-      //   if (error.response.status === 422) {
-      //     for (const [key, value] of Object.entries(error.response.data)) {
-      //       this.$q.notify({
-      //         message: value,
-      //         color: 'red'
-      //       }, this)
-      //     }
-      //   }
-      // }      
+      })   
     },
     openDrawer (type) {
       this.drawerContent = type
