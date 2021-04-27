@@ -26,12 +26,12 @@
             <div class="col-12 q-pa-md">
 
               <template v-if="drawerContent === 'search'">
-                <q-table class="q-ma-sm" title="Search Results" selection="multiple" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="nameColumns" row-key="id">
+                <q-table class="q-ma-sm" title="Search Results" selection="multiple" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="nameColumns" :filter-method="namesFilterMethod" :filter="namesFilter" row-key="id">
                   <template v-slot:top-right>
-                    <q-input filled dense debounce="300" placeholder="Search" clearable>
+                    <q-input filled dense debounce="300" v-model="namesFilter" placeholder="Search" clearable>
                       <template v-slot:append><q-icon name="search"></q-icon></template>
                     </q-input>
-                    <q-btn color="primary" label="Search Again" class="q-ma-md" @click="search()"></q-btn>
+                    <!-- <q-btn color="primary" label="Search Again" class="q-ma-md" @click="search()"></q-btn> -->
                   </template>
                   <template v-slot:bottom>
                     <!-- <q-btn color="primary" label="Remove Selected from Project" class="q-ma-md"></q-btn> -->
@@ -164,7 +164,7 @@
               </div>
 
               <div class="row">
-                <q-input class="q-pa-sm col-4" label="Search" bg-color="white" outlined>
+                <q-input class="q-pa-sm col-4" label="Search" bg-color="white" v-model="namesFilter" outlined>
                   <template v-slot:append><q-icon name="search"></q-icon></template>
                 </q-input>
                 <q-toggle v-model="value" label="All Projects"></q-toggle>
@@ -244,7 +244,7 @@
                       <q-input class="full-width" filled v-model="alias.middle_name" label="Middle Name" hint=""></q-input>
                     </div>
                     <div class="col-3 q-py-xs q-px-sm">
-                      <q-input class="full-width" filled v-model="alias.maiden_name" label="Maiden Name" hint=""></q-input>
+                      <q-input class="full-width" filled v-model="alias.maiden_name" label="Birth Name" hint=""></q-input>
                     </div>
                   </div>
                   <div class="row">
@@ -344,7 +344,7 @@
                       <q-input class="full-width" filled v-model="name.middle_name" label="Middle Name" hint=""></q-input>
                     </div>
                     <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.maiden_name" label="Maiden Name" hint=""></q-input>
+                      <q-input class="full-width" filled v-model="name.maiden_name" label="Birth Name" hint=""></q-input>
                     </div>
                   </div>
                   <div class="row">
@@ -441,7 +441,7 @@
                   <div class="col-3 q-pa-sm text-left">{{name.given_name}}</div>
                 </div>
                 <div class="row">
-                  <div class="col-3 q-pa-sm text-bold text-left">Maiden Name:</div>
+                  <div class="col-3 q-pa-sm text-bold text-left">Birth Name:</div>
                   <div class="col-3 q-pa-sm text-left">{{name.maiden_name}}</div>
                   <div class="col-3 q-pa-sm text-bold text-left">Middle Name:</div>
                   <div class="col-3 q-pa-sm text-left">{{name.middle_name}}</div>

@@ -80,7 +80,7 @@ new Vue({
           format: val => `${val}`,
           sortable: true 
         },
-        { name: 'maiden_name', label: 'MAIDEN NAME', field: 'maiden_name', sortable: true },
+        { name: 'maiden_name', label: 'BIRTH NAME', field: 'maiden_name', sortable: true },
         { name: 'birth', label: 'BIRTH', field: 'date_of_birth', sortable: true },
         { name: 'death', label: 'DEATH', field: 'date_of_death', sortable: true },
         { name: 'name_key', label: 'KEY', field: 'name_key', sortable: true },
@@ -139,37 +139,73 @@ new Vue({
   },
   methods: {
     projectNamesFilterMethod () {
-      var filter = this.projectNamesFilter
+      var filter = this.projectNamesFilter.toLowerCase()
       return this.projectNameData.filter(function (name) {
-        if (name.family_name && name.family_name.includes(filter)) {
+        if (name.family_name && name.family_name.toLowerCase().includes(filter)) {
           return true
-        }else if (name.given_name && name.given_name.includes(filter)){
+        }else if (name.given_name && name.given_name.toLowerCase().includes(filter)){
           return true
-        }else if (name.maiden_name && name.maiden_name.includes(filter)){
+        }else if (name.maiden_name && name.maiden_name.toLowerCase().includes(filter)){
           return true
-        }else if (name.middle_name && name.middle_name.includes(filter)){
+        }else if (name.middle_name && name.middle_name.toLowerCase().includes(filter)){
           return true
-        }else if (name.suffix && name.suffix.includes(filter)){
+        }else if (name.suffix && name.suffix.toLowerCase().includes(filter)){
           return true
-        }else if (name.keywords && name.keywords.includes(filter)){
+        }else if (name.keywords && name.keywords.toLowerCase().includes(filter)){
           return true
-        }else if (name.variants && name.variants.includes(filter)){
+        }else if (name.variants && name.variants.toLowerCase().includes(filter)){
           return true
-        }else if (name.professions && name.professions.includes(filter)){
+        }else if (name.professions && name.professions.toLowerCase().includes(filter)){
           return true
-        }else if (name.title && name.title.includes(filter)){
+        }else if (name.title && name.title.toLowerCase().includes(filter)){
           return true
-        }else if (name.date_of_birth && name.date_of_birth.includes(filter)){
+        }else if (name.date_of_birth && name.date_of_birth.toLowerCase().includes(filter)){
           return true
-        }else if (name.date_of_death && name.date_of_death.includes(filter)){
+        }else if (name.date_of_death && name.date_of_death.toLowerCase().includes(filter)){
           return true
-        }else if (name.public_notes && name.public_notes.includes(filter)){
+        }else if (name.public_notes && name.public_notes.toLowerCase().includes(filter)){
           return true
-        }else if (name.staff_notes && name.staff_notes.includes(filter)){
+        }else if (name.staff_notes && name.staff_notes.toLowerCase().includes(filter)){
           return true
-        }else if (name.bio_filename && name.bio_filename.includes(filter)){
+        }else if (name.bio_filename && name.bio_filename.toLowerCase().includes(filter)){
           return true
-        }else if (name.name_key && name.name_key.includes(filter)){
+        }else if (name.name_key && name.name_key.toLowerCase().includes(filter)){
+          return true
+        }
+      })
+    },
+    namesFilterMethod () {
+      var filter = this.namesFilter.toLowerCase()
+      return this.nameData.filter(function (name) {
+        if (name.family_name && name.family_name.toLowerCase().includes(filter)) {
+          return true
+        }else if (name.given_name && name.given_name.toLowerCase().includes(filter)){
+          return true
+        }else if (name.maiden_name && name.maiden_name.toLowerCase().includes(filter)){
+          return true
+        }else if (name.middle_name && name.middle_name.toLowerCase().includes(filter)){
+          return true
+        }else if (name.suffix && name.suffix.toLowerCase().includes(filter)){
+          return true
+        }else if (name.keywords && name.keywords.toLowerCase().includes(filter)){
+          return true
+        }else if (name.variants && name.variants.toLowerCase().includes(filter)){
+          return true
+        }else if (name.professions && name.professions.toLowerCase().includes(filter)){
+          return true
+        }else if (name.title && name.title.toLowerCase().includes(filter)){
+          return true
+        }else if (name.date_of_birth && name.date_of_birth.toLowerCase().includes(filter)){
+          return true
+        }else if (name.date_of_death && name.date_of_death.toLowerCase().includes(filter)){
+          return true
+        }else if (name.public_notes && name.public_notes.toLowerCase().includes(filter)){
+          return true
+        }else if (name.staff_notes && name.staff_notes.toLowerCase().includes(filter)){
+          return true
+        }else if (name.bio_filename && name.bio_filename.toLowerCase().includes(filter)){
+          return true
+        }else if (name.name_key && name.name_key.toLowerCase().includes(filter)){
           return true
         }
       })
