@@ -2,9 +2,20 @@ new Vue({
   el: '#q-app',
   data: function () {
     return {
-      value: false,
       tabNameNotes: 'public',
       project: 1,
+      splitterModel: 15,
+      nameTab: 'general',
+      model: '',
+      authorityOptions: [
+        'SNAC',
+        'LCNAF'
+      ],
+      linkOptions: [
+        'authority',
+        'source'
+      ],
+      showEditLinkModal: false,
 
       baseURL: 'http://primarysourcecoop.org/mhs-api/v1/',
       namesFilter: '',
@@ -14,6 +25,7 @@ new Vue({
       model: 'one',
       selectedNames: [],
       selectedProjectNames: [],
+      searchOnlyMyProject: false,
       loading: false,
       loadingNames: false,
       loadingGroups: false,
@@ -36,6 +48,13 @@ new Vue({
         'spelling',
         'role'
       ],
+      link: {
+        authority: null,
+        authority_id: null,
+        display_title: null,
+        type: null,
+        url: null
+      },
       name: {
         family_name: null,
         given_name: null,
@@ -76,7 +95,7 @@ new Vue({
         { 
           name: 'name', 
           label: 'NAME', 
-          field: row => (row.middle_name) ? row.given_name + ' ' + row.middle_name + ' ' + row.family_name : row.given_name  + ' ' + row.family_name,
+          field: row => (row.middle_name) ? row.family_name + ', ' +  row.given_name + ' ' + row.middle_name: row.family_name + ' ' + row.given_name,
           format: val => `${val}`,
           sortable: true 
         },
@@ -129,7 +148,13 @@ new Vue({
         { name: 'title', label: 'TITLE', field: 'title', sortable: true, align: 'left' },
         { name: 'type', label: 'TYPE', field: 'type', sortable: true, align: 'left' },
         { name: 'actions', label: 'Actions', field: '', align: 'center' }
-      ],      
+      ],
+      pagination: {
+        sortBy: 'desc',
+        descending: false,
+        page: 1,
+        rowsPerPage: 50
+      },
       groupData: [],
       nameData: [],
       subjectData: [],
@@ -228,8 +253,16 @@ new Vue({
       setTimeout(() => { 
         this.loading = false
         this.searchResultsLoading = false
-        this.searchResultsData = this.nameData
+        this.searchResultsData = (this.searchOnlyMyProject) ? this.projectNameData : this.nameData
       }, 1500)
+    },
+    copyNameKey (event, row) {
+      Quasar.copyToClipboard(row.name_key).then(() => {
+        this.$q.notify({
+          message: 'name-key copied to clipboard',
+          color: 'green'
+        }, this)
+      })
     },
     async saveName () {
       this.$refs.nameForm.validate().then(async success => {
@@ -265,12 +298,12 @@ new Vue({
         }
       })
     },
-    editName (name = null) {
-      this.modeNameModal = (name) ? 'Edit' : 'Add'
+    editName (bNew = false) {
+      this.modeNameModal = (bNew) ? 'Add' : 'Edit'
       this.showEditNameModal = true
-      this.name = {...name}
+      // this.name = (bNew) ? null : {...name}
     },
-    viewName (name) {
+    viewName (event, name) {
       this.showNameModal = true
       this.name = {...name}
     },
@@ -353,6 +386,73 @@ new Vue({
         }
       })
     },
+    editLink (link = null) {
+      this.showEditLinkModal = true
+      if (link) {
+        this.link = {...link}
+      }else{
+        this.link = {
+          authority: null,
+          authority_id: null,
+          display_title: null,
+          type: null,
+          url: null
+        }
+      }
+    },
+    async saveLink () {
+      this.loading = true
+      try {
+        if (this.link.id) {
+          const response = await axios.patch(this.baseURL + 'links/' + this.link.id, this.link)
+        } else {
+          this.link.linkable_type = 'Models\\Name'
+          this.link.linkable_id = this.name.id
+          const response = await axios.post(this.baseURL + 'links', this.link)
+        }
+        await this.getNames()
+        await this.getProjectNames()
+
+        this.name = this.nameData.find(name => name.id === this.name.id)
+        this.loading = false
+        this.showEditLinkModal = false
+
+      } catch (error) {
+        this.loading = false
+        this.showEditLinkModal = false
+        if (error.response.status === 422) {
+          for (const [key, value] of Object.entries(error.response.data)) {
+            this.$q.notify({
+              message: value,
+              color: 'red'
+            }, this)
+          }
+        }
+      }
+    },
+    async deleteLink (link) {
+      this.$q.dialog({
+        title: 'Confirm',
+        message: `Are you sure you want to delete this link?`,
+        cancel: true,
+        persistent: true
+      }).onOk(async () => {
+        try {
+          this.loading = true
+          await axios.delete(this.baseURL + 'links/' + link.id)
+          await this.getNames()
+          await this.getProjectNames()
+          this.name = this.nameData.find(name => name.id === this.name.id)
+          this.loading = false
+        } catch (error) {
+          this.loading = false
+          this.$q.notify({
+            message: 'Sorry, something went wrong.',
+            color: 'red'
+          }, this)
+        }
+      })
+    },
     editSubject (subject = null) {
       this.modeSubjectModal = (subject) ? 'Edit' : 'Add'
       this.showSubjectModal = true
@@ -423,7 +523,7 @@ new Vue({
     async getNames() {
       this.loadingNames = true
       try {
-        const response = await axios.get(this.baseURL + 'names' + '?per_page=10000');
+        const response = await axios.get(this.baseURL + 'names' + '?per_page=100000');
         this.nameData = response.data.data
       } catch (error) {
         console.error(error)
@@ -433,7 +533,7 @@ new Vue({
     async getProjectNames() {
       this.loadingNames = true
       try {
-        const response = await axios.get(this.baseURL + 'projects/1/names' + '?per_page=10000');
+        const response = await axios.get(this.baseURL + 'projects/1/names' + '?per_page=100000');
         this.projectNameData = response.data
       } catch (error) {
         console.error(error)
@@ -442,7 +542,7 @@ new Vue({
     },
     async getSubjects() {
       try {
-        const response = await axios.get(this.baseURL + 'subjects' + '?per_page=10000');
+        const response = await axios.get(this.baseURL + 'subjects' + '?per_page=100000');
         this.subjectData = response.data.data
       } catch (error) {
         console.error(error)
@@ -451,7 +551,7 @@ new Vue({
     async getGroups() {
       this.loadingGroups = true
       try {
-        const response = await axios.get(this.baseURL + 'lists' + '?per_page=10000');
+        const response = await axios.get(this.baseURL + 'lists' + '?per_page=100000');
         this.groupData = response.data.data
       } catch (error) {
         console.error(error)

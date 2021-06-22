@@ -26,34 +26,20 @@
             <div class="col-12 q-pa-md">
 
               <template v-if="drawerContent === 'search'">
-                <q-table class="q-ma-sm" title="Search Results" selection="multiple" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="nameColumns" :filter-method="namesFilterMethod" :filter="namesFilter" row-key="id">
+                <q-table class="q-ma-sm" title="Search Results" selection="multiple" @row-dblclick="viewName" @row-click="copyNameKey" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="nameColumns" :filter-method="namesFilterMethod" :filter="namesFilter" row-key="id">
                   <template v-slot:top-right>
+                    <q-btn dense color="primary" label="Add Selected to Project" class="q-ma-md" @click="addProjectNames()"></q-btn>
+                    <q-btn dense color="primary" label="Add Selected to Group" class="q-ma-md" @click="addNamesToGroup()"></q-btn>
+                    <!-- <q-select outlined dense emit-value map-options option-value="id" option-label="name" v-model="selectedGroup" :options="groupData" label="Group" class="q-ma-md col-2"></q-select> -->
                     <q-input filled dense debounce="300" v-model="namesFilter" placeholder="Search" clearable>
                       <template v-slot:append><q-icon name="search"></q-icon></template>
                     </q-input>
-                    <!-- <q-btn color="primary" label="Search Again" class="q-ma-md" @click="search()"></q-btn> -->
-                  </template>
-                  <template v-slot:bottom>
-                    <!-- <q-btn color="primary" label="Remove Selected from Project" class="q-ma-md"></q-btn> -->
-                    <q-btn color="primary" label="Add Selected to Project" class="q-ma-md" @click="addProjectNames()"></q-btn>
-                    <q-btn color="primary" label="Add Selected to Group" class="q-ma-md" @click="addNamesToGroup()"></q-btn>
-                    <q-select outlined dense emit-value map-options option-value="id" option-label="name" v-model="selectedGroup" :options="groupData" label="Group" class="q-ma-md col-2"></q-select>
-                  </template>
-                  <template v-slot:body-cell-actions="props">
-                    <q-td :props="props">
-                      <q-btn round class="q-ma-sm" icon="edit" @click="editName(props.row)" size="sm">
-                        <q-tooltip>Edit</q-tooltip>
-                      </q-btn>
-                      <q-btn round class="q-ma-sm" icon="open_in_new" size="sm" @click="viewName(props.row)">
-                        <q-tooltip>View</q-tooltip>
-                      </q-btn>
-                    </q-td>
                   </template>
                 </q-table>
               </template>
         
               <template v-else-if="drawerContent === 'names'">
-                <q-table class="q-ma-sm" title="Names" selection="multiple" :selected.sync="selectedProjectNames" :data="projectNameData" :columns="nameColumns" :filter-method="projectNamesFilterMethod" :filter="projectNamesFilter" row-key="id" :loading="loadingNames">
+                <q-table class="q-ma-sm" title="Names" selection="multiple" @row-dblclick="viewName" @row-click="copyNameKey" :selected.sync="selectedProjectNames" :data="projectNameData" :columns="nameColumns" :filter-method="projectNamesFilterMethod" :filter="projectNamesFilter" row-key="id" :loading="loadingNames">
                   <template v-slot:top-right>
                     <q-input filled dense debounce="300" v-model="projectNamesFilter" placeholder="Search" clearable class="q-ma-sm">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
@@ -68,21 +54,11 @@
                   <template v-slot:bottom>
                     <q-btn color="primary" label="Remove Selected from Project" class="q-ma-md" @click="removeProjectNames()"></q-btn>
                   </template>
-                  <template v-slot:body-cell-actions="props">
-                    <q-td :props="props">
-                      <q-btn round class="q-ma-sm" icon="edit" size="sm" @click="editName(props.row)">
-                        <q-tooltip>Edit</q-tooltip>
-                      </q-btn>
-                      <q-btn round class="q-ma-sm" icon="open_in_new" size="sm" @click="viewName(props.row)">
-                        <q-tooltip>View</q-tooltip>
-                      </q-btn>
-                    </q-td>
-                  </template>
                 </q-table>
               </template>
 
               <template v-else-if="drawerContent === 'subjects'">
-                <q-table class="q-ma-sm" title="Subjects" selection="multiple" :selected.sync="selected" :data="subjectData" :columns="subjectColumns" :filter="subjectsFilter" row-key="id" :loading="loadingSubjects">
+                <q-table class="q-ma-sm" title="Subjects" selection="multiple" @row-dblclick="viewSubject" :selected.sync="selected" :data="subjectData" :columns="subjectColumns" :filter="subjectsFilter" row-key="id" :loading="loadingSubjects">
                   <template v-slot:top-right>
                     <q-input filled dense debounce="300" v-model="subjectsFilter" placeholder="Search" clearable class="q-ma-sm">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
@@ -94,21 +70,11 @@
                       <q-tooltip>Refresh List</q-tooltip>
                     </q-btn>
                   </template>
-                  <template v-slot:body-cell-actions="props">
-                    <q-td :props="props">
-                      <q-btn round class="q-ma-sm" icon="edit" size="sm" @click="editSubject(props.row)">
-                        <q-tooltip>Edit</q-tooltip>
-                      </q-btn>
-                      <q-btn round class="q-ma-sm" icon="open_in_new" size="sm" @click="viewSubject(props.row)">
-                        <q-tooltip>View</q-tooltip>
-                      </q-btn>
-                    </q-td>
-                  </template>
                 </q-table>
               </template>
 
               <template v-else-if="drawerContent === 'aliases'">
-                <q-table class="q-ma-sm" title="Aliases" selection="multiple" :selected.sync="selected" :data="aliasData" :columns="aliasColumns" :filter="aliasesFilter" row-key="id" :loading="loadingAliases">
+                <q-table class="q-ma-sm" title="Aliases" selection="multiple" @row-dblclick="ViewAlias" :selected.sync="selected" :data="aliasData" :columns="aliasColumns" :filter="aliasesFilter" row-key="id" :loading="loadingAliases">
                   <template v-slot:top-right>
                     <q-input filled dense debounce="300" v-model="aliasesFilter" placeholder="Search" clearable class="q-ma-sm">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
@@ -119,16 +85,6 @@
                     <q-btn round flat icon="refresh" @click="getAliases()" :loading="loadingAliases" class="q-ma-sm">
                       <q-tooltip>Refresh List</q-tooltip>
                     </q-btn>
-                  </template>
-                  <template v-slot:body-cell-actions="props">
-                    <q-td :props="props">
-                      <q-btn dense round class="q-ma-sm" icon="open_in_new" @click="editAlias(props.row)">
-                        <q-tooltip>Edit</q-tooltip>
-                      </q-btn>
-                      <q-btn dense round class="q-ma-sm" icon="delete" @click="deleteAlias(props.row)">
-                        <q-tooltip>Delete</q-tooltip>
-                      </q-btn>
-                    </q-td>
                   </template>
                 </q-table>
               </template>
@@ -160,15 +116,15 @@
               </div>
 
               <div class="row">
-                <q-btn class="q-ma-sm" color="primary" icon="add" label="New Name" @click="editName()"></q-btn>
+                <q-btn class="q-ma-sm" color="primary" icon="add" label="New Name" @click="editName"></q-btn>
               </div>
 
               <div class="row">
                 <q-input class="q-pa-sm col-4" label="Search" bg-color="white" v-model="namesFilter" outlined>
                   <template v-slot:append><q-icon name="search"></q-icon></template>
                 </q-input>
-                <q-toggle v-model="value" label="All Projects"></q-toggle>
                 <q-btn color="primary" label="Search" class="q-ma-md" @click="search()"></q-btn>
+                <q-toggle v-model="searchOnlyMyProject" label="limit search to my project"></q-toggle>
               </div>
               
 
@@ -178,7 +134,7 @@
                 </q-card-section>
                 <q-card-section>
                   <template v-for="group in groupData">
-                    <span class="text-h6">{{group.name}}</span>&nbsp;&nbsp;&nbsp;<a @click="viewGroup()" href="#">view</a>
+                    <span class="text-h6">{{group.name}}</span>&nbsp;&nbsp;&nbsp;<a @click="viewGroup" href="#">view</a>
                   </template>
                   <q-inner-loading :showing="loadingGroups" class="q-pa-lg"></q-inner-loading>
                 </q-card-section>
@@ -187,39 +143,19 @@
             </div>
             <div class="col-6 q-pa-md">
 
-              <q-table class="q-ma-sm" title="RECENTLY ADDED NAMES" :data="nameData" :columns="nameColumns" row-key="name" :loading="loadingNames">
+              <q-table class="q-ma-sm" title="RECENTLY ADDED NAMES" @row-dblclick="copyNameKey" @row-click="viewName" :data="nameData" :columns="nameColumns" row-key="name" :loading="loadingNames">
                 <template v-slot:top-right>
                   <q-btn round flat icon="refresh" @click="getNames()" :loading="loadingNames" class="q-ma-sm">
                     <q-tooltip>Refresh List</q-tooltip>
                   </q-btn>
-                </template>
-                <template v-slot:body-cell-actions="props">
-                  <q-td :props="props">
-                    <q-btn round class="q-ma-sm" icon="edit" @click="editName(props.row)" size="sm">
-                      <q-tooltip>Edit</q-tooltip>
-                    </q-btn>
-                    <q-btn round class="q-ma-sm" icon="open_in_new" size="sm" @click="viewName(props.row)">
-                      <q-tooltip>View</q-tooltip>
-                    </q-btn>
-                  </q-td>
                 </template>
               </q-table>
 
-              <q-table class="q-ma-sm" title="THIS PROJECT'S NAMES" :data="projectNameData" :columns="nameColumns" row-key="name" :loading="loadingNames">
+              <q-table class="q-ma-sm" title="THIS PROJECT'S NAMES" @row-dblclick="copyNameKey" @row-click="viewName" :data="projectNameData" :columns="nameColumns" row-key="name" :loading="loadingNames">
                 <template v-slot:top-right>
                   <q-btn round flat icon="refresh" @click="getNames()" :loading="loadingNames" class="q-ma-sm">
                     <q-tooltip>Refresh List</q-tooltip>
                   </q-btn>
-                </template>
-                <template v-slot:body-cell-actions="props">
-                  <q-td :props="props">
-                    <q-btn round class="q-ma-sm" icon="edit" @click="editName(props.row)" size="sm">
-                      <q-tooltip>Edit</q-tooltip>
-                    </q-btn>
-                    <q-btn round class="q-ma-sm" icon="open_in_new" size="sm" @click="viewName(props.row)">
-                      <q-tooltip>View</q-tooltip>
-                    </q-btn>
-                  </q-td>
                 </template>
               </q-table>
 
@@ -259,7 +195,6 @@
                     </div>
                     <div class="col-3 q-py-xs q-px-sm">
                       <q-select class="full-width" filled v-model="alias.type" :options="aliasTypeOptions" label="Type"></q-select>
-                      <!-- <q-input class="full-width" filled v-model="alias.type" label="Type" hint=""></q-input> -->
                     </div>
                   </div>
                   <div class="row">
@@ -279,7 +214,7 @@
 
               <q-card-actions align="right">
                 <q-btn label="Cancel" outline @click="showAliasModal = false"></q-btn>
-                <q-btn label="Save" color="primary" @click="saveAlias()"></q-btn>
+                <q-btn label="Save" color="primary" @click="saveAlias"></q-btn>
               </q-card-actions>
 
               <q-inner-loading :showing="loading"></q-inner-loading>              
@@ -319,7 +254,7 @@
 
               <q-card-actions align="right">
                 <q-btn label="Cancel" outline @click="showSubjectModal = false"></q-btn>
-                <q-btn label="Save" color="primary" @click="saveSubject()"></q-btn>
+                <q-btn label="Save" color="primary" @click="saveSubject"></q-btn>
               </q-card-actions>
 
               <q-inner-loading :showing="loading"></q-inner-loading>              
@@ -328,148 +263,258 @@
 
           <q-dialog v-model="showEditNameModal" persistent>
             <q-card style="min-width: 1000px;">
-              <q-card-section>
-                <q-form ref="nameForm" greedy>
-                  <div class="row">
-                    <div class="text-h5 q-py-md q-px-sm">{{modeNameModal}} Name</div>
-                  </div>
-                  <div class="row">
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.family_name" label="Family Name" :rules="[val => (val !== null && val !== '' && val !== undefined) || 'Family Name is Required']"></q-input>
-                    </div>
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.given_name" label="Given Name" :rules="[val => (val !== null && val !== '' && val !== undefined) || 'Given Name is Required']"></q-input>
-                    </div>
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.middle_name" label="Middle Name" hint=""></q-input>
-                    </div>
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.maiden_name" label="Birth Name" hint=""></q-input>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.suffix" label="Suffix" hint=""></q-input>
-                    </div>
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.variants" label="Variants" hint=""></q-input>
-                    </div>
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.professions" label="Professions" hint=""></q-input>
-                    </div>
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.title" label="Title" hint=""></q-input>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-2 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.date_of_birth" mask="####-##-##" label="Date of Birth" hint=""></q-input>
-                    </div>
-                    <div class="col-2 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.date_of_death" mask="####-##-##" label="Date of Death" hint=""></q-input>
-                    </div>
-                    <div class="col-4 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.bio_filename" label="Bio Filename" hint=""></q-input>
-                    </div>
-                    <div class="col-4 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.keywords" label="Keywords" hint=""></q-input>
-                    </div>
-                  </div>
-                  <!-- <div class="row">
-                    <div class="col-3 q-py-sm q-px-sm">&nbsp;</div>
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.date_of_birth" mask="####-##-##" label="Date of Birth" hint=""></q-input>
-                    </div>
-                    <div class="col-3 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.date_of_death" mask="####-##-##" label="Date of Death" hint=""></q-input>
-                    </div>
-                  </div> -->
-                  
-                  <q-separator></q-separator>
-                  <div class="row">
-                    <div class="col-12 q-py-sm q-px-sm">
-                      <q-tabs v-model="tabNameNotes" active-color="primary" indicator-color="primary" align="justify" narrow-indicator>
-                        <q-tab name="public" label="Public Notes"></q-tab>
-                        <q-tab name="staff" label="Staff Notes"></q-tab>
-                      </q-tabs>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-12 q-py-sm q-px-sm">
-                      <q-tab-panels v-model="tabNameNotes" animated>
-                        <q-tab-panel name="public">
-                          <q-input class="full-width" filled v-model="name.public_notes" label="Public Notes" type="textarea" hint=""></q-input>
-                        </q-tab-panel>
-                        <q-tab-panel name="staff">
-                          <q-input class="full-width" filled v-model="name.staff_notes" label="Staff Notes" type="textarea" hint=""></q-input>
-                        </q-tab-panel>
-                      </q-tab-panels>
-                    </div>
 
-                    <!-- <div class="col-12 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.public_notes" label="Public Notes" type="textarea" hint=""></q-input>
-                    </div> -->
-                  </div>
-                  <!-- <div class="row">
-                    <div class="col-12 q-py-sm q-px-sm">
-                      <q-input class="full-width" filled v-model="name.staff_notes" label="Staff Notes" type="textarea" hint=""></q-input>
-                    </div>
-                  </div> -->
-                </q-form>
+              <q-card-section>
+                <q-splitter v-model="splitterModel" style="height: 500px" disable>
+                  <template v-slot:before>
+
+                    <q-tabs v-model="nameTab" vertical>
+                      <q-tab name="general" icon="person" label="General"></q-tab>
+                      <q-tab name="notes" icon="description" label="Notes"></q-tab>
+                      <q-tab name="links" disable="name.id" icon="link" label="Links"></q-tab>
+                    </q-tabs>
+
+                  </template>
+                  <template v-slot:after>
+
+                    <q-tab-panels v-model="nameTab" animated vertical transition-prev="jump-up" transition-next="jump-up">
+                      <q-tab-panel name="general">
+                        <q-form ref="nameForm" greedy>
+                          <div class="row">
+                            <div class="col-3 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.family_name" label="Family Name" :rules="[val => (val !== null && val !== '' && val !== undefined) || 'Family Name is Required']"></q-input>
+                            </div>
+                            <div class="col-3 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.given_name" label="Given Name" :rules="[val => (val !== null && val !== '' && val !== undefined) || 'Given Name is Required']"></q-input>
+                            </div>
+                            <div class="col-3 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.middle_name" label="Middle Name" hint=""></q-input>
+                            </div>
+                            <div class="col-3 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.maiden_name" label="Birth Name" hint=""></q-input>
+                            </div>
+                          </div>
+                          <div class="row">
+                            <div class="col-3 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.suffix" label="Suffix" hint=""></q-input>
+                            </div>
+                            <div class="col-3 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.variants" label="Variants" hint=""></q-input>
+                            </div>
+                            <div class="col-3 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.professions" label="Professions" hint=""></q-input>
+                            </div>
+                            <div class="col-3 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.title" label="Title" hint=""></q-input>
+                            </div>
+                          </div>
+                          <div class="row">
+                            <div class="col-2 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.date_of_birth" mask="####-##-##" label="Date of Birth" hint=""></q-input>
+                            </div>
+                            <div class="col-2 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.date_of_death" mask="####-##-##" label="Date of Death" hint=""></q-input>
+                            </div>
+                            <div class="col-4 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.bio_filename" label="Bio Filename" hint=""></q-input>
+                            </div>
+                            <div class="col-4 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.keywords" label="Keywords" hint=""></q-input>
+                            </div>
+                          </div>
+                      </q-tab-panel>
+                      <q-tab-panel name="notes">
+                        <div class="row">
+                          <div class="col-12 q-pa-sm">
+                            <q-tabs v-model="tabNameNotes" active-color="primary" indicator-color="primary" align="justify" narrow-indicator>
+                              <q-tab name="public" label="Public Notes"></q-tab>
+                              <q-tab name="staff" label="Staff Notes"></q-tab>
+                            </q-tabs>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-12 q-pa-sm">
+                            <q-tab-panels v-model="tabNameNotes" animated>
+                              <q-tab-panel name="public">
+                                <q-input class="full-width" filled autogrow v-model="name.public_notes" label="Public Notes" type="textarea" hint=""></q-input>
+                              </q-tab-panel>
+                              <q-tab-panel name="staff">
+                                <q-input class="full-width" filled autogrow v-model="name.staff_notes" label="Staff Notes" type="textarea" hint=""></q-input>
+                              </q-tab-panel>
+                            </q-tab-panels>
+                          </div>
+                        </div>
+                      </q-tab-panel>
+                      <q-tab-panel name="links">
+                        <q-list bordered separator class="rounded-borders">
+                          <q-item v-for="link in name.links" :key="link.id">
+                            <q-item-section v-if="link.type === 'authority'">{{link.authority}} - {{link.authority_id}}</q-item-section>
+                            <q-item-section v-else>{{link.url}}</q-item-section>
+                            <q-item-section class="col-2">
+                              <q-btn label="Edit" outline dense @click="editLink(link)"></q-btn>
+                            </q-item-section>
+                            <q-item-section class="col-1">
+                              <q-btn label="" icon="delete" dense color="negative" @click="deleteLink(link)"></q-btn>
+                            </q-item-section>
+                          </q-item>
+                          <q-item>
+                            <q-item-section>
+                              <q-btn icon="add_circle_outline" label="New Link" color="green-6" @click="editLink()"></q-btn>
+                            </q-item-section>
+                          </q-item>
+                        </q-list>
+                      </q-tab-panel>
+                    </q-tab-panels>
+
+                  </template>
+                </q-splitter>
               </q-card-section>
 
               <q-separator></q-separator>
 
-
               <q-card-actions align="between">
                 <q-btn label="Delete" flat color="negative" align="left" @click="deleteName(); showEditNameModal = false"></q-btn>
                 <q-btn label="Cancel" outline @click="showEditNameModal = false"></q-btn>
-                <q-btn label="Save" color="primary" @click="saveName()"></q-btn>
+                <q-btn label="Save" color="primary" @click="saveName"></q-btn>
               </q-card-actions>
 
               <q-inner-loading :showing="loading"></q-inner-loading>
             </q-card>
           </q-dialog>
 
-          <q-dialog v-model="showNameModal" persistent>
-            <q-card style="min-width: 700px;">
+          <q-dialog v-model="showEditLinkModal" persistent>
+            <q-card style="min-width: 600px;">
               <q-card-section>
-                <div class="row">
-                  <div class="col-3 q-pa-sm text-bold text-left">Family Name:</div>
-                  <div class="col-3 q-pa-sm text-left">{{name.family_name}}</div>
-                  <div class="col-3 q-pa-sm text-bold text-left">Given Name:</div>
-                  <div class="col-3 q-pa-sm text-left">{{name.given_name}}</div>
-                </div>
-                <div class="row">
-                  <div class="col-3 q-pa-sm text-bold text-left">Birth Name:</div>
-                  <div class="col-3 q-pa-sm text-left">{{name.maiden_name}}</div>
-                  <div class="col-3 q-pa-sm text-bold text-left">Middle Name:</div>
-                  <div class="col-3 q-pa-sm text-left">{{name.middle_name}}</div>
-                </div>
-                <div class="row">
-                  <div class="col-3 q-pa-sm text-bold text-left">Suffix:</div>
-                  <div class="col-3 q-pa-sm text-left">{{name.suffix}}</div>
-                  <div class="col-3 q-pa-sm text-bold text-left">Keywords:</div>
-                  <div class="col-3 q-pa-sm text-left">{{name.keywords}}</div>
-                </div>
-                <div class="row">
-                  <div class="col-3 q-pa-sm text-bold text-left">Date of Birth:</div>
-                  <div class="col-3 q-pa-sm text-left">{{name.date_of_birth}}</div>
-                  <div class="col-3 q-pa-sm text-bold text-left">Date of Death:</div>
-                  <div class="col-3 q-pa-sm text-left">{{name.date_of_death}}</div>
-                </div>
-                <div class="row"><q-separator class="q-ma-sm"></q-separator></div>
-                <div class="row">
-                  <q-input class="q-pa-sm full-width" filled readonly v-model="name.public_notes" label="Public Notes" type="textarea" hint=""></q-input>
-                </div>
-                <div class="row">
-                  <q-input class="q-pa-sm full-width" filled readonly v-model="name.staff_notes" label="Staff Notes" type="textarea" hint=""></q-input>
+                <div class="row col-12">
+                  <div class="col-4 q-py-sm q-px-sm">
+                    <q-select class="full-width" v-model="link.type" :options="linkOptions" label="Type"></q-select>
+                  </div>
+                  <template v-if="link.type === 'authority'">
+                    <div class="col-4 q-py-sm q-px-sm">
+                      <q-select class="full-width" v-model="link.authority" :options="authorityOptions" label="Authority"></q-select>
+                    </div>
+                    <div class="col-4 q-py-sm q-px-sm" v-show="link.type === 'authority'">
+                      <q-input class="full-width" v-model="link.authority_id" label="Authority ID"></q-select>
+                    </div>
+                  </template>
+                  <template v-if="link.type === 'source'">
+                    <div class="col-8 q-py-sm q-px-sm">
+                      <q-input class="full-width" v-model="link.url" label="URL"></q-select>
+                    </div>
+                  </template>
                 </div>
               </q-card-section>
 
               <q-separator></q-separator>
 
+              <q-card-actions align="right">
+                <q-btn label="Cancel" outline @click="showEditLinkModal = false"></q-btn>
+                <q-btn label="Save" color="primary" @click="saveLink"></q-btn>
+              </q-card-actions>
+
+              <q-inner-loading :showing="loading"></q-inner-loading>
+
+            </q-card>
+          </q-dialog>
+
+          <q-dialog v-model="showNameModal">
+            <q-card style="min-width: 1000px;">
+
+              <q-card-section>
+                <q-splitter v-model="splitterModel" style="height: 500px" disable>
+                  <template v-slot:before>
+
+                    <q-tabs v-model="nameTab" vertical>
+                      <q-tab name="general" icon="person" label="General"></q-tab>
+                      <q-tab name="notes" icon="description" label="Notes"></q-tab>
+                      <q-tab name="links" icon="link" label="Links"></q-tab>
+                    </q-tabs>
+
+                  </template>
+                  <template v-slot:after>
+
+                    <q-tab-panels  v-model="nameTab" animated vertical transition-prev="jump-up" transition-next="jump-up">
+                      <q-tab-panel name="general">
+                        <div class="row">
+                          <div class="col-2 q-pa-sm text-bold text-left">Title:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.title}}</div>
+                          <div class="col-2 q-pa-sm text-bold text-left">&nbsp;</div>
+                          <div class="col-4 q-pa-sm text-left">&nbsp;</div>
+                        </div>
+                        <div class="row">
+                          <div class="col-2 q-pa-sm text-bold text-left">Family Name:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.family_name}}</div>
+                          <div class="col-2 q-pa-sm text-bold text-left">Given Name:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.given_name}}</div>
+                        </div>
+                        <div class="row">
+                          <div class="col-2 q-pa-sm text-bold text-left">Birth Name:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.maiden_name}}</div>
+                          <div class="col-2 q-pa-sm text-bold text-left">Middle Name:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.middle_name}}</div>
+                        </div>
+                        <div class="row">
+                          <div class="col-2 q-pa-sm text-bold text-left">Date of Birth:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.date_of_birth}}</div>
+                          <div class="col-2 q-pa-sm text-bold text-left">Date of Death:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.date_of_death}}</div>
+                        </div>
+                        <div class="row">
+                          <div class="col-2 q-pa-sm text-bold text-left">Suffix:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.suffix}}</div>
+                          <div class="col-2 q-pa-sm text-bold text-left">Keywords:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.keywords}}</div>
+                        </div>
+                        <div class="row">
+                          <div class="col-2 q-pa-sm text-bold text-left">Variants:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.variants}}</div>
+                          <div class="col-2 q-pa-sm text-bold text-left">Professions:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.professions}}</div>
+                        </div>
+                      </q-tab-panel>
+                      <q-tab-panel name="notes">
+                        <div class="row">
+                          <div class="col-12 q-pa-sm">
+                            <q-tabs v-model="tabNameNotes" active-color="primary" indicator-color="primary" align="justify" narrow-indicator>
+                              <q-tab name="public" label="Public Notes"></q-tab>
+                              <q-tab name="staff" label="Staff Notes"></q-tab>
+                            </q-tabs>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-12 q-pa-sm">
+                            <q-tab-panels v-model="tabNameNotes" animated>
+                              <q-tab-panel name="public">
+                                <q-input class="full-width" filled readonly autogrow v-model="name.public_notes" label="Public Notes" type="textarea" hint=""></q-input>
+                              </q-tab-panel>
+                              <q-tab-panel name="staff">
+                                <q-input class="full-width" filled readonly autogrow v-model="name.staff_notes" label="Staff Notes" type="textarea" hint=""></q-input>
+                              </q-tab-panel>
+                            </q-tab-panels>
+                          </div>
+                        </div>
+                      </q-tab-panel>
+                      <q-tab-panel name="links">
+                        <q-list bordered separator class="rounded-borders">
+                          <q-item v-for="link in name.links" :key="link.id">
+                            <q-item-section v-if="link.type === 'authority'">{{link.authority}} - {{link.authority_id}}</q-item-section>
+                            <q-item-section v-else>{{link.url}}</q-item-section>
+                          </q-item>
+                          <q-item v-if="name.links && name.links.length === 0">
+                            <q-item-section>No Links Found</q-item-section>
+                          </q-item>
+                        </q-list>
+                      </q-tab-panel>
+                    </q-tab-panels>
+                  
+                  </template>
+                </q-splitter>
+              </q-card-section>
+
+              <q-separator></q-separator>
+
               <q-card-actions align="center">
+                <q-btn label="Edit" outline  class="q-ma-xs" @click="showNameModal = false; editName()"></q-btn>
                 <q-btn label="Close" color="primary"  class="q-ma-xs" @click="showNameModal = false"></q-btn>
               </q-card-actions>
 
@@ -483,7 +528,7 @@
     </div>
 
     <!-- Add the following at the end of your body tag -->
-    
+
     <script src="https://cdn.jsdelivr.net/npm/quasar@1.14.3/dist/quasar.ie.polyfills.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@^2.0.0/dist/vue.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/quasar@1.14.3/dist/quasar.umd.modern.min.js"></script>
