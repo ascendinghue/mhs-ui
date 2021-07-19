@@ -26,12 +26,11 @@
             <div class="col-12 q-pa-md">
 
               <template v-if="drawerContent === 'search'">
-                <q-table class="q-ma-sm" title="Search Results" selection="multiple" @row-dblclick="viewName" @row-click="copyNameKey" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="nameColumns" :filter-method="namesFilterMethod" :filter="namesFilter" row-key="id">
+                <q-table class="q-ma-sm" title="Search Results" selection="multiple" @row-dblclick="viewName" @row-click="copyNameKey" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="nameColumns" :filter-method="namesFilterMethod" :filter="namesFilter" row-key="id" :pagination="defaultPagination">
                   <template v-slot:top-right>
-                    <q-btn dense color="primary" label="Add Selected to Project" class="q-ma-md" @click="addProjectNames()"></q-btn>
-                    <q-btn dense color="primary" label="Add Selected to Group" class="q-ma-md" @click="addNamesToGroup()"></q-btn>
-                    <!-- <q-select outlined dense emit-value map-options option-value="id" option-label="name" v-model="selectedGroup" :options="groupData" label="Group" class="q-ma-md col-2"></q-select> -->
-                    <q-input filled dense debounce="300" v-model="namesFilter" placeholder="Search" clearable>
+                    <q-btn color="primary" label="Add Selected to Project" class="q-ma-sm" @click="addProjectNames()" :disabled="selectedNames.length === 0"></q-btn>
+                    <q-btn color="primary" label="Add Selected to Group" class="q-ma-sm" @click="showAddToGroupModal = true" :disabled="selectedNames.length === 0"></q-btn>
+                    <q-input filled dense debounce="300" v-model="namesFilter" placeholder="Search">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
                     </q-input>
                   </template>
@@ -39,9 +38,9 @@
               </template>
         
               <template v-else-if="drawerContent === 'names'">
-                <q-table class="q-ma-sm" title="Names" selection="multiple" @row-dblclick="viewName" @row-click="copyNameKey" :selected.sync="selectedProjectNames" :data="projectNameData" :columns="nameColumns" :filter-method="projectNamesFilterMethod" :filter="projectNamesFilter" row-key="id" :loading="loadingNames">
+                <q-table class="q-ma-sm" title="Names" selection="multiple" @row-dblclick="viewName" @row-click="copyNameKey" :selected.sync="selectedProjectNames" :data="projectNameData" :columns="nameColumns" :filter-method="projectNamesFilterMethod" :filter="projectNamesFilter" row-key="id" :loading="loadingNames" :pagination="defaultPagination">
                   <template v-slot:top-right>
-                    <q-input filled dense debounce="300" v-model="projectNamesFilter" placeholder="Search" clearable class="q-ma-sm">
+                    <q-input filled dense debounce="300" v-model="projectNamesFilter" placeholder="Search" class="q-ma-sm">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
                     </q-input>
                     <q-btn round flat icon="note_add" class="q-ma-sm" @click="editName()">
@@ -58,9 +57,9 @@
               </template>
 
               <template v-else-if="drawerContent === 'subjects'">
-                <q-table class="q-ma-sm" title="Subjects" selection="multiple" @row-dblclick="viewSubject" :selected.sync="selected" :data="subjectData" :columns="subjectColumns" :filter="subjectsFilter" row-key="id" :loading="loadingSubjects">
+                <q-table class="q-ma-sm" title="Subjects" selection="multiple" @row-dblclick="viewSubject" :selected.sync="selected" :data="subjectData" :columns="subjectColumns" :filter="subjectsFilter" row-key="id" :loading="loadingSubjects" :pagination="defaultPagination">
                   <template v-slot:top-right>
-                    <q-input filled dense debounce="300" v-model="subjectsFilter" placeholder="Search" clearable class="q-ma-sm">
+                    <q-input filled dense debounce="300" v-model="subjectsFilter" placeholder="Search" class="q-ma-sm">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
                     </q-input>
                     <q-btn round flat icon="note_add" class="q-ma-sm" @click="editSubject()">
@@ -74,9 +73,9 @@
               </template>
 
               <template v-else-if="drawerContent === 'aliases'">
-                <q-table class="q-ma-sm" title="Aliases" selection="multiple" @row-dblclick="ViewAlias" :selected.sync="selected" :data="aliasData" :columns="aliasColumns" :filter="aliasesFilter" row-key="id" :loading="loadingAliases">
+                <q-table class="q-ma-sm" title="Aliases" selection="multiple" @row-dblclick="ViewAlias" :selected.sync="selected" :data="aliasData" :columns="aliasColumns" :filter="aliasesFilter" row-key="id" :loading="loadingAliases" :pagination="defaultPagination">
                   <template v-slot:top-right>
-                    <q-input filled dense debounce="300" v-model="aliasesFilter" placeholder="Search" clearable class="q-ma-sm">
+                    <q-input filled dense debounce="300" v-model="aliasesFilter" placeholder="Search" class="q-ma-sm">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
                     </q-input>
                     <q-btn round flat icon="note_add" class="q-ma-sm" @click="editAlias()">
@@ -90,7 +89,16 @@
               </template>
 
               <template v-else-if="drawerContent === 'group'">
-
+                <q-table class="q-ma-sm" :title="group.name" no-results-label="No results found" no-data-label="No results found" selection="multiple" :selected.sync="selectedNames" :data="group.names" :columns="nameColumns" @row-dblclick="viewName" @row-click="copyNameKey" :filter="groupNamesFilter" row-key="id" :loading="loadingGroupNames" :pagination="defaultPagination">
+                  <template v-slot:top-right>
+                    <q-btn color="negative" label="Delete Group" class="q-ma-sm" @click="deleteGroup(group)"></q-btn>
+                    <q-btn color="primary" label="Edit Group" class="q-ma-sm" @click="editGroup(group)"></q-btn>
+                    <q-btn color="primary" label="Remove Selected from Group" class="q-ma-sm" @click="removeNamesFromGroup()" :disabled="selectedNames.length === 0"></q-btn>
+                    <q-input filled dense debounce="300" v-model="groupNamesFilter" placeholder="Search" class="q-ma-sm">
+                      <template v-slot:append><q-icon name="search"></q-icon></template>
+                    </q-input>
+                  </template>
+                </q-table>
               </template>
 
             </div>
@@ -107,8 +115,8 @@
               <div class="row q-py-xs q-px-md">
                 <a href="index.html">Project Home</a> &nbsp;|&nbsp;
                 <a @click="openDrawer('names')" href="#">Project Names</a> &nbsp;|&nbsp;
-                <a @click="openDrawer('subjects')" href="#">Project Subjects</a> &nbsp;|&nbsp;
-                <a @click="openDrawer('aliases')" href="#">Project Aliases</a> &nbsp;
+                <a @click="openDrawer('subjects')" href="#">Project Subjects</a> <!-- &nbsp;|&nbsp; -->
+                <!-- <a @click="openDrawer('aliases')" href="#">Project Aliases</a> &nbsp; -->
               </div>
 
               <div class="row">
@@ -127,23 +135,18 @@
                 <q-toggle v-model="searchOnlyMyProject" label="limit search to my project"></q-toggle>
               </div>
               
-
-              <q-card class="q-ma-sm">
-                <q-card-section>
-                  <div class="text-h5">GROUPS</div>
-                </q-card-section>
-                <q-card-section>
-                  <template v-for="group in groupData">
-                    <span class="text-h6">{{group.name}}</span>&nbsp;&nbsp;&nbsp;<a @click="viewGroup" href="#">view</a>
-                  </template>
-                  <q-inner-loading :showing="loadingGroups" class="q-pa-lg"></q-inner-loading>
-                </q-card-section>
-              </q-card>
+              <q-table class="q-ma-sm" title="GROUPS" @row-click="viewGroup" :data="groupData" :columns="groupColumns" row-key="name" :loading="loadingGroups" no-results-label="No results found" no-data-label="No results found">
+                <template v-slot:top-right>
+                  <q-btn round flat icon="add" @click="editGroup()" :loading="loadingGroups" class="q-ma-sm">
+                    <q-tooltip>Create New</q-tooltip>
+                  </q-btn>
+                </template>
+              </q-table>
 
             </div>
             <div class="col-6 q-pa-md">
 
-              <q-table class="q-ma-sm" title="RECENTLY ADDED NAMES" @row-dblclick="copyNameKey" @row-click="viewName" :data="nameData" :columns="nameColumns" row-key="name" :loading="loadingNames">
+              <q-table class="q-ma-sm" title="RECENTLY ADDED NAMES" @row-dblclick="viewName" @row-click="copyNameKey" :data="nameData" :columns="nameColumns" row-key="name" :loading="loadingNames" no-results-label="No results found" no-data-label="No results found">
                 <template v-slot:top-right>
                   <q-btn round flat icon="refresh" @click="getNames()" :loading="loadingNames" class="q-ma-sm">
                     <q-tooltip>Refresh List</q-tooltip>
@@ -151,7 +154,7 @@
                 </template>
               </q-table>
 
-              <q-table class="q-ma-sm" title="THIS PROJECT'S NAMES" @row-dblclick="copyNameKey" @row-click="viewName" :data="projectNameData" :columns="nameColumns" row-key="name" :loading="loadingNames">
+              <q-table class="q-ma-sm" title="THIS PROJECT'S NAMES" @row-dblclick="viewName" @row-click="copyNameKey" :data="projectNameData" :columns="nameColumns" row-key="name" :loading="loadingNames" no-results-label="No results found" no-data-label="No results found">
                 <template v-slot:top-right>
                   <q-btn round flat icon="refresh" @click="getNames()" :loading="loadingNames" class="q-ma-sm">
                     <q-tooltip>Refresh List</q-tooltip>
@@ -271,7 +274,7 @@
                     <q-tabs v-model="nameTab" vertical>
                       <q-tab name="general" icon="person" label="General"></q-tab>
                       <q-tab name="notes" icon="description" label="Notes"></q-tab>
-                      <q-tab name="links" disable="name.id" icon="link" label="Links"></q-tab>
+                      <q-tab name="links" icon="link" label="Links" v-show="name.id"></q-tab>
                     </q-tabs>
 
                   </template>
@@ -280,6 +283,17 @@
                     <q-tab-panels v-model="nameTab" animated vertical transition-prev="jump-up" transition-next="jump-up">
                       <q-tab-panel name="general">
                         <q-form ref="nameForm" greedy>
+                          <div class="row" v-show="name.id === null">
+                            <div class="col-6 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.name_key" label="Name Key" @keyup="checkNameKey">
+                                <template v-slot:append>
+                                  <q-avatar>
+                                    <img :src="nameKeyIconSrc">
+                                  </q-avatar>
+                                </template>
+                              </q-input>
+                            </div>
+                          </div>
                           <div class="row">
                             <div class="col-3 q-py-sm q-px-sm">
                               <q-input class="full-width" filled v-model="name.family_name" label="Family Name" :rules="[val => (val !== null && val !== '' && val !== undefined) || 'Family Name is Required']"></q-input>
@@ -373,7 +387,7 @@
               <q-separator></q-separator>
 
               <q-card-actions align="between">
-                <q-btn label="Delete" flat color="negative" align="left" @click="deleteName(); showEditNameModal = false"></q-btn>
+                <q-btn label="Delete" flat color="negative" align="left" @click="deleteName(); showEditNameModal = false" :disabled="name.id === null"></q-btn>
                 <q-btn label="Cancel" outline @click="showEditNameModal = false"></q-btn>
                 <q-btn label="Save" color="primary" @click="saveName"></q-btn>
               </q-card-actions>
@@ -514,12 +528,55 @@
               <q-separator></q-separator>
 
               <q-card-actions align="center">
-                <q-btn label="Edit" outline  class="q-ma-xs" @click="showNameModal = false; editName()"></q-btn>
+                <q-btn label="Edit" outline  class="q-ma-xs" @click="editName()"></q-btn>
                 <q-btn label="Close" color="primary"  class="q-ma-xs" @click="showNameModal = false"></q-btn>
               </q-card-actions>
 
             </q-card>
           </q-dialog>
+
+          <q-dialog v-model="showGroupModal" persistent>
+            <q-card style="min-width: 600px;">
+              <q-card-section>
+                <q-form ref="groupForm" greedy>
+                  <div class="row col-12">
+                    <div class="full-width q-py-sm q-px-sm">
+                      <q-input class="full-width" v-model="group.name" label="Name" :rules="[val => (val !== null && val !== '' && val !== undefined) || 'Name is Required']"></q-input>
+                    </div>
+                    <!-- <div class="col-4 q-py-sm q-px-sm" v-show="group.id === null">
+                      <q-select class="full-width" v-model="group.type" :options="groupTypeOptions" label="Type" :rules="[val => (val !== null && val !== '' && val !== undefined) || 'Type is Required']"></q-select>
+                    </div> -->
+                  </div>
+                </q-form>
+              </q-card-section>
+              <q-separator></q-separator>
+              <q-card-actions align="right">
+                <q-btn label="Cancel" outline @click="showGroupModal = false"></q-btn>
+                <q-btn label="Save" color="primary" @click="saveGroup"></q-btn>
+              </q-card-actions>
+              <q-inner-loading :showing="loading"></q-inner-loading>
+            </q-card>
+          </q-dialog>
+
+          <q-dialog v-model="showAddToGroupModal" persistent>
+            <q-card style="min-width: 600px;">
+              <q-card-section>
+                <q-form ref="addToGroupForm" greedy>
+                  <div class="row col-12">
+                    <q-select label="Group" outlined emit-value map-options option-value="id" option-label="name" v-model="selectedGroup" :options="groupData" label="Group" class="full-width" :rules="[val => (val !== null && val !== '' && val !== undefined) || 'Group is Required']"></q-select>
+                  </div>
+                </q-form>
+              </q-card-section>
+              <q-separator></q-separator>
+              <q-card-actions align="right">
+                <q-btn label="Cancel" outline @click="showAddToGroupModal = false"></q-btn>
+                <q-btn label="Save" color="primary" @click="addNamesToGroup()"></q-btn>
+              </q-card-actions>
+              <q-inner-loading :showing="loading"></q-inner-loading>
+            </q-card>
+          </q-dialog>
+
+
         </q-page-container>
         
       </q-layout>

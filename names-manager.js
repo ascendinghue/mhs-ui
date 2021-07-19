@@ -20,6 +20,7 @@ new Vue({
       baseURL: 'http://primarysourcecoop.org/mhs-api/v1/',
       namesFilter: '',
       projectNamesFilter: '',
+      groupNamesFilter: '',
       subjectsFilter: '',
       aliasesFilter: '',
       model: 'one',
@@ -31,6 +32,7 @@ new Vue({
       loadingGroups: false,
       loadingAliases: false,
       loadingSubjects: false,
+      loadingGroupNames: false,
       searchResultsData: [],
       searchResultsLoading: false,
       drawerOpen: false,
@@ -42,8 +44,15 @@ new Vue({
       modeSubjectModal: null,
       showAliasModal: false,
       modeAliasModal: null,
+      showGroupModal: false,
+      modeGroupModal: null,
+      showAddToGroupModal: false,
       selected: [],
       selectedGroup: null,
+      groupTypeOptions: [
+        'subject',
+        'name'
+      ],
       aliasTypeOptions: [
         'spelling',
         'role'
@@ -56,6 +65,8 @@ new Vue({
         url: null
       },
       name: {
+        id: null,
+        name_key: null,
         family_name: null,
         given_name: null,
         maiden_name: null,
@@ -90,6 +101,12 @@ new Vue({
         type: 'role',
         public_notes: null,
         staff_notes: null
+      },
+      group: {
+        project_id: 1,
+        type: 'name',
+        name: null,
+        names: []
       },
       nameColumns: [
         { 
@@ -149,20 +166,97 @@ new Vue({
         { name: 'type', label: 'TYPE', field: 'type', sortable: true, align: 'left' },
         { name: 'actions', label: 'Actions', field: '', align: 'center' }
       ],
+      groupColumns: [
+        { 
+          name: 'name', 
+          label: 'NAME', 
+          field: 'name',
+          align: 'left',
+          sortable: true 
+        }
+        // { 
+        //   name: 'type', 
+        //   label: 'TYPE', 
+        //   field: 'type',
+        //   align: 'left',
+        //   sortable: true 
+        // },
+        // { name: 'actions', label: '', field: '', align: 'center' }
+      ],
       pagination: {
         sortBy: 'desc',
         descending: false,
         page: 1,
         rowsPerPage: 50
       },
+      defaultPagination: {
+        rowsPerPage: 10
+      },
       groupData: [],
       nameData: [],
       subjectData: [],
       projectNameData: [],
-      aliasData: []
+      aliasData: [],
+      nameKeyAvailable: false
+    }
+  },
+  computed: {
+    nameKeyIconSrc () {
+      if (this.name.name_key === null || this.name.name_key.replace(/\s/g,'') === '') {
+        return 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Circle_sign_blank.svg/240px-Circle_sign_blank.svg.png'
+      }else{
+        return this.nameKeyAvailable ? 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Flat_tick_icon.svg/240px-Flat_tick_icon.svg.png' : 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/White_X_in_red_background.svg/240px-White_X_in_red_background.svg.png'
+      }
+    }
+  },
+  watch: {
+    drawerContent: function () {
+      this.selectedNames = []
+    },
+    showEditNameModal: function () {
+      if (this.showEditNameModal === false) {
+        this.resetNameObj()
+      }
+    },
+    showNameModal: function () {
+      if (this.showNameModal === false && this.showEditNameModal === false) {
+        this.resetNameObj()
+      }
+    },
+    showAddToGroupModal: function () {
+      if (this.showAddToGroupModal === false) {
+        this.selectedGroup = null
+      }
     }
   },
   methods: {
+    async checkNameKey () {
+      const response = await axios.get(this.baseURL + 'names/name-key-available?q=' + this.name.name_key)
+      this.nameKeyAvailable = (response.data === 0)
+    },
+    resetNameObj () {
+      this.nameTab = 'general'
+      this.tabNameNotes = 'public'
+      this.name = {
+        id: null,
+        name_key: null,
+        family_name: null,
+        given_name: null,
+        maiden_name: null,
+        middle_name: null,
+        suffix: null,
+        keywords: null,
+        variants: null,
+        professions: '',
+        title: null,
+        date_of_birth: null,
+        date_of_death: null,
+        public_notes: null,
+        staff_notes: null,
+        bio_filename: null,
+        name_key: null
+      }
+    },
     projectNamesFilterMethod () {
       var filter = this.projectNamesFilter.toLowerCase()
       return this.projectNameData.filter(function (name) {
@@ -235,14 +329,45 @@ new Vue({
         }
       })
     },
-    viewGroup () {
+    async viewGroup (event, group) {
       this.drawerContent = 'group'
       this.loading = true
+      this.loadingGroupNames = true
       this.drawerOpen = true
 
-      setTimeout(() => { 
-        this.loading = false
-      }, 1500)
+      try {
+        const response = await axios.get(this.baseURL + 'lists/' + group.id)
+        this.group = response.data
+      } catch (error) {
+        console.error(error)
+      }
+      
+      this.loading = false
+      this.loadingGroupNames = false
+    },
+    async deleteGroup (group = null)
+    {
+      group = (group) ? group : this.group
+      this.$q.dialog({
+        title: 'Confirm',
+        message: `Are you sure you want to delete ${group.name}?`,
+        cancel: true,
+        persistent: true
+      }).onOk(async () => {
+        try {
+          this.loading = true
+          await axios.delete(this.baseURL + 'lists/' + group.id)
+          await this.getGroups()
+          this.drawerOpen = false
+          this.loading = false
+        } catch (error) {
+          this.loading = false
+          this.$q.notify({
+            message: 'Sorry, something went wrong.',
+            color: 'red'
+          }, this)
+        }
+      })
     },
     search () {
       this.drawerContent = 'search'
@@ -301,11 +426,14 @@ new Vue({
     editName (bNew = false) {
       this.modeNameModal = (bNew) ? 'Add' : 'Edit'
       this.showEditNameModal = true
-      // this.name = (bNew) ? null : {...name}
+      this.showNameModal = false
     },
     viewName (event, name) {
       this.showNameModal = true
       this.name = {...name}
+    },
+    viewSubject () {
+
     },
     async deleteName (name = null)
     {
@@ -467,6 +595,52 @@ new Vue({
       this.$refs.aliasForm.validate().then(async success => {
       })
     },
+    editGroup(group = null) {
+      this.modeGroupModal = (group) ? 'Edit' : 'Add'
+      this.showGroupModal = true
+      if (group === null) {
+        this.group = {
+          id: null,
+          project_id: 1,
+          type: 'name',
+          name: null,
+          names: []
+        }
+      }
+    },
+    async saveGroup () {
+      this.$refs.groupForm.validate().then(async success => {
+        if (success) {
+          this.loading = true
+          try {
+            if (this.modeGroupModal === 'Add') {
+              const response = await axios.post(this.baseURL + 'lists', this.group)
+            }else{
+              const response = await axios.patch(this.baseURL + 'lists/' + this.group.id, this.group)
+            }
+            await this.getGroups()
+            
+            this.$q.notify({
+              message: (this.modeGroupModal === 'Add') ? 'Group created successfully' : `${this.group.name} updated successfully`,
+              color: 'green'
+            }, this)
+
+            this.loading = false
+            this.showGroupModal = false
+          } catch (error) {
+            this.loading = false
+            if (error.response.status === 422) {
+              for (const [key, value] of Object.entries(error.response.data)) {
+                this.$q.notify({
+                  message: value,
+                  color: 'red'
+                }, this)
+              }
+            }
+          }
+        }
+      })
+    },
     async removeProjectNames() {
       this.loading = true
       try {
@@ -480,7 +654,12 @@ new Vue({
           color: 'red'
         }, this)
       }
-      
+                      
+      this.$q.notify({
+        message: 'Names removed successfully',
+        color: 'green'
+      }, this)
+
       this.selectedNames = []
       this.loading = false
     },
@@ -488,7 +667,7 @@ new Vue({
       this.loading = true
       try {
         await axios.patch(this.baseURL + 'projects/' + this.project + '/names', {
-          name_ids: this.selectedNames.map(name => name.id)
+          name_ids: this.selectedNames.filter(name => !this.projectNameData.map(name => name.id).includes(name.id)).map(name => name.id)
         })
         await this.getProjectNames()
       } catch (error) {
@@ -497,24 +676,69 @@ new Vue({
           color: 'red'
         }, this)
       }
-      
+                
+      this.$q.notify({
+        message: 'Names added successfully',
+        color: 'green'
+      }, this)
+
       this.selectedNames = []
       this.loading = false
     },
-
-    async addNamesToGroup() {
+    async removeNamesFromGroup() {
       this.loading = true
 
-      this.selectedNames.forEach(name => {
+      this.selectedNames.forEach(async name => {
         try {
-          // const response = await axios.patch(this.baseURL + 'lists/' + this.subject.id, this.subject)
+          await axios.patch(this.baseURL + 'lists/' + this.group.id + '/name', {
+            name_id: name.id
+          })
+          this.group.names = this.group.names.filter(obj => obj.id !== name.id);
         } catch (error) {
             this.$q.notify({
               message: 'Sorry, something went wrong',
               color: 'red'
             }, this)
         }
-      })   
+      })         
+    
+      this.$q.notify({
+        message: 'Names removed successfully',
+        color: 'green'
+      }, this)
+
+      this.selectedNames = []
+      this.loading = false
+    },
+    async addNamesToGroup() {
+      this.$refs.addToGroupForm.validate().then(async success => {
+        if (success) {
+          this.loading = true
+          const response = await axios.get(this.baseURL + 'lists/' + this.selectedGroup)
+          var groupNameIDs = response.data.names.map(name => name.id);
+          this.selectedNames.filter(name => !groupNameIDs.includes(name.id)).forEach(async name => {
+            try {
+              await axios.patch(this.baseURL + 'lists/' + this.selectedGroup + '/name', {
+                name_id: name.id
+              })
+            } catch (error) {
+                this.$q.notify({
+                  message: 'Sorry, something went wrong',
+                  color: 'red'
+                }, this)
+            }
+          }) 
+          
+          this.$q.notify({
+            message: 'Names added successfully',
+            color: 'green'
+          }, this)
+
+          this.selectedNames = []
+          this.loading = false
+          this.showAddToGroupModal = false
+        }
+      })
     },
     openDrawer (type) {
       this.drawerContent = type
@@ -523,7 +747,7 @@ new Vue({
     async getNames() {
       this.loadingNames = true
       try {
-        const response = await axios.get(this.baseURL + 'names' + '?per_page=100000');
+        const response = await axios.get(this.baseURL + 'names' + '?per_page=100');
         this.nameData = response.data.data
       } catch (error) {
         console.error(error)
