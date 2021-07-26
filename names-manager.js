@@ -370,17 +370,37 @@ new Vue({
         }
       })
     },
-    search () {
+    async search () {
       this.drawerContent = 'search'
       this.loading = true
       this.searchResultsData = []
       this.searchResultsLoading = true
       this.drawerOpen = true
-      setTimeout(() => { 
+      if (this.searchOnlyMyProject) {
+        try {
+          const response = await axios.get(this.baseURL + 'projects/1/names' + '?q=' + this.namesFilter)
+          this.searchResultsData = response.data
+        } catch (error) {
+          console.error(error)
+        }
         this.loading = false
         this.searchResultsLoading = false
-        this.searchResultsData = (this.searchOnlyMyProject) ? this.projectNameData : this.nameData
-      }, 1500)
+      }else{
+        try {
+          const response = await axios.get(this.baseURL + 'names' + '?q=' + this.namesFilter)
+          this.searchResultsData = response.data.data
+        } catch (error) {
+          console.error(error)
+        }
+        this.loading = false
+        this.searchResultsLoading = false
+      }
+
+      // setTimeout(() => { 
+      //   this.loading = false
+      //   this.searchResultsLoading = false
+      //   this.searchResultsData = (this.searchOnlyMyProject) ? this.projectNameData : this.nameData
+      // }, 1500)
     },
     copyNameKey (event, row) {
       Quasar.copyToClipboard(row.name_key).then(() => {
@@ -748,7 +768,7 @@ new Vue({
     async getNames() {
       this.loadingNames = true
       try {
-        const response = await axios.get(this.baseURL + 'names' + '?per_page=100');
+        const response = await axios.get(this.baseURL + 'names');
         this.nameData = response.data.data
       } catch (error) {
         console.error(error)
@@ -758,7 +778,7 @@ new Vue({
     async getProjectNames() {
       this.loadingNames = true
       try {
-        const response = await axios.get(this.baseURL + 'projects/1/names' + '?per_page=100000');
+        const response = await axios.get(this.baseURL + 'projects/1/names' + '?per_page=1000');
         this.projectNameData = response.data
       } catch (error) {
         console.error(error)

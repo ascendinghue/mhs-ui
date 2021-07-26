@@ -26,13 +26,13 @@
             <div class="col-12 q-pa-md">
 
               <template v-if="drawerContent === 'search'">
-                <q-table class="q-ma-sm" title="Search Results" selection="multiple" @row-dblclick="viewName" @row-click="copyNameKey" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="nameColumns" :filter-method="namesFilterMethod" :filter="namesFilter" row-key="id" :pagination="defaultPagination">
+                <q-table class="q-ma-sm" title="Search Results" selection="multiple" @row-dblclick="viewName" @row-click="copyNameKey" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="nameColumns" row-key="id" :pagination="defaultPagination">
                   <template v-slot:top-right>
                     <q-btn color="primary" label="Add Selected to Project" class="q-ma-sm" @click="addProjectNames()" :disabled="selectedNames.length === 0"></q-btn>
                     <q-btn color="primary" label="Add Selected to Group" class="q-ma-sm" @click="showAddToGroupModal = true" :disabled="selectedNames.length === 0"></q-btn>
-                    <q-input filled dense debounce="300" v-model="namesFilter" placeholder="Search">
+                    <!-- <q-input filled dense debounce="300" v-model="namesFilter" placeholder="Search">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
-                    </q-input>
+                    </q-input> -->
                   </template>
                 </q-table>
               </template>
