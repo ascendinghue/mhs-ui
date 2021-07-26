@@ -231,6 +231,7 @@ new Vue({
   },
   methods: {
     async checkNameKey () {
+      this.name.name_key = this.name.name_key.toLowerCase().replace(/\s/g, "").replace(/[!@#$%^&*`'";,<.>/?:+=_~(){}\[\]|\\]/g, "")
       const response = await axios.get(this.baseURL + 'names/name-key-available?q=' + this.name.name_key)
       this.nameKeyAvailable = (response.data === 0)
     },

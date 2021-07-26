@@ -267,6 +267,12 @@
           <q-dialog v-model="showEditNameModal" persistent>
             <q-card style="min-width: 1000px;">
 
+              <q-card-section v-show="this.modeNameModal !== 'Add'">
+                <div class="text-h5 q-pa-xs text-center">{{this.name.name_key}}</div>
+              </q-card-section>
+
+              <q-separator></q-separator>
+
               <q-card-section>
                 <q-splitter v-model="splitterModel" style="height: 500px" disable>
                   <template v-slot:before>
@@ -313,7 +319,7 @@
                               <q-input class="full-width" filled v-model="name.suffix" label="Suffix" hint=""></q-input>
                             </div>
                             <div class="col-3 q-py-sm q-px-sm">
-                              <q-input class="full-width" filled v-model="name.variants" label="Variants" hint=""></q-input>
+                              <q-input class="full-width" filled v-model="name.variants" label="Variants" hint="" :rules="[val => (val !== null && val !== '' && val !== undefined) || 'Variants is Required']"></q-input>
                             </div>
                             <div class="col-3 q-py-sm q-px-sm">
                               <q-input class="full-width" filled v-model="name.professions" label="Professions" hint=""></q-input>
@@ -433,6 +439,11 @@
 
           <q-dialog v-model="showNameModal">
             <q-card style="min-width: 1000px;">
+              <q-card-section>
+                <div class="text-h5 q-pa-xs text-center">{{this.name.name_key}}</div>
+              </q-card-section>
+              
+              <q-separator></q-separator>
 
               <q-card-section>
                 <q-splitter v-model="splitterModel" style="height: 500px" disable>
