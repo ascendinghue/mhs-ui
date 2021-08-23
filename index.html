@@ -26,7 +26,7 @@
             <div class="col-12 q-pa-md">
 
               <template v-if="drawerContent === 'search'">
-                <q-table class="q-ma-sm" title="Search Results" selection="multiple" @row-dblclick="viewName" @row-click="copyNameKey" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="nameColumns" row-key="id" :pagination="defaultPagination">
+                <q-table class="q-ma-sm" title="Search Results" selection="multiple" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="searchColumns" row-key="id" :pagination="defaultPagination">
                   <template v-slot:top-right>
                     <q-btn color="primary" label="Add Selected to Project" class="q-ma-sm" @click="addProjectNames()" :disabled="selectedNames.length === 0"></q-btn>
                     <q-btn color="primary" label="Add Selected to Group" class="q-ma-sm" @click="showAddToGroupModal = true" :disabled="selectedNames.length === 0"></q-btn>
@@ -34,11 +34,25 @@
                       <template v-slot:append><q-icon name="search"></q-icon></template>
                     </q-input> -->
                   </template>
+                  <template v-slot:body-cell="props">
+                    <template v-if="props.col.name === 'name_key'">
+                      <q-td :props="props" @click="copyNameKey(props.value)">{{ props.value }}</q-td>
+                    </template>
+                    <template v-else-if="props.col.name === 'staff_notes'">
+                      <q-td :props="props" @click="viewName(event, props.row)">
+                        {{ props.value | truncate }}
+                        <q-tooltip anchor="top middle" self="bottom middle" :offset="[10, 10]">{{ props.value }}</q-tooltip>
+                      </q-td>
+                    </template>
+                    <template v-else>
+                      <q-td :props="props" @click="viewName(event, props.row)">{{ props.value }}</q-td>
+                    </template>
+                  </template>
                 </q-table>
               </template>
         
               <template v-else-if="drawerContent === 'names'">
-                <q-table class="q-ma-sm" title="Names" selection="multiple" @row-dblclick="viewName" @row-click="copyNameKey" :selected.sync="selectedProjectNames" :data="projectNameData" :columns="nameColumns" :filter-method="projectNamesFilterMethod" :filter="projectNamesFilter" row-key="id" :loading="loadingNames" :pagination="defaultPagination">
+                <q-table class="q-ma-sm" title="Names" selection="multiple" @row-dblclick="viewName" :selected.sync="selectedProjectNames" :data="projectNameData" :columns="nameColumns" :filter-method="projectNamesFilterMethod" :filter="projectNamesFilter" row-key="id" :loading="loadingNames" :pagination="defaultPagination">
                   <template v-slot:top-right>
                     <q-input filled dense debounce="300" v-model="projectNamesFilter" placeholder="Search" class="q-ma-sm">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
@@ -89,7 +103,7 @@
               </template>
 
               <template v-else-if="drawerContent === 'group'">
-                <q-table class="q-ma-sm" :title="group.name" no-results-label="No results found" no-data-label="No results found" selection="multiple" :selected.sync="selectedNames" :data="group.names" :columns="nameColumns" @row-dblclick="viewName" @row-click="copyNameKey" :filter="groupNamesFilter" row-key="id" :loading="loadingGroupNames" :pagination="defaultPagination">
+                <q-table class="q-ma-sm" :title="group.name" no-results-label="No results found" no-data-label="No results found" selection="multiple" :selected.sync="selectedNames" :data="group.names" :columns="nameColumns" @row-dblclick="viewName" :filter="groupNamesFilter" row-key="id" :loading="loadingGroupNames" :pagination="defaultPagination">
                   <template v-slot:top-right>
                     <q-btn color="negative" label="Delete Group" class="q-ma-sm" @click="deleteGroup(group)"></q-btn>
                     <q-btn color="primary" label="Edit Group" class="q-ma-sm" @click="editGroup(group)"></q-btn>
@@ -146,7 +160,7 @@
             </div>
             <div class="col-6 q-pa-md">
 
-              <q-table class="q-ma-sm" title="RECENTLY ADDED NAMES" @row-dblclick="viewName" @row-click="copyNameKey" :data="nameData" :columns="nameColumns" row-key="name" :loading="loadingNames" no-results-label="No results found" no-data-label="No results found">
+              <q-table class="q-ma-sm" title="RECENTLY ADDED NAMES" @row-dblclick="viewName" :data="nameData" :columns="nameColumns" row-key="name" :loading="loadingNames" no-results-label="No results found" no-data-label="No results found">
                 <template v-slot:top-right>
                   <q-btn round flat icon="refresh" @click="getNames()" :loading="loadingNames" class="q-ma-sm">
                     <q-tooltip>Refresh List</q-tooltip>
@@ -154,7 +168,7 @@
                 </template>
               </q-table>
 
-              <q-table class="q-ma-sm" title="THIS PROJECT'S NAMES" @row-dblclick="viewName" @row-click="copyNameKey" :data="projectNameData" :columns="nameColumns" row-key="name" :loading="loadingNames" no-results-label="No results found" no-data-label="No results found">
+              <q-table class="q-ma-sm" title="THIS PROJECT'S NAMES" @row-dblclick="viewName" :data="projectNameData" :columns="nameColumns" row-key="name" :loading="loadingNames" no-results-label="No results found" no-data-label="No results found">
                 <template v-slot:top-right>
                   <q-btn round flat icon="refresh" @click="getNames()" :loading="loadingNames" class="q-ma-sm">
                     <q-tooltip>Refresh List</q-tooltip>
@@ -268,7 +282,7 @@
             <q-card style="min-width: 1000px;">
 
               <q-card-section v-show="this.modeNameModal !== 'Add'">
-                <div class="text-h5 q-pa-xs text-center">{{this.name.name_key}}</div>
+                <div class="text-h5 q-pa-xs text-center">{{this.name.name_key}} <q-btn outline size="sm" padding="xs" icon="content_copy" @click="copyNameKey(name.name_key)"></q-btn></div>
               </q-card-section>
 
               <q-separator></q-separator>
@@ -329,17 +343,17 @@
                             </div>
                           </div>
                           <div class="row">
-                            <div class="col-2 q-py-sm q-px-sm">
+                            <div class="col-3 q-py-sm q-px-sm">
                               <q-input class="full-width" filled v-model="name.date_of_birth" mask="####-##-##" label="Date of Birth" hint=""></q-input>
                             </div>
-                            <div class="col-2 q-py-sm q-px-sm">
+                            <div class="col-3 q-py-sm q-px-sm">
                               <q-input class="full-width" filled v-model="name.date_of_death" mask="####-##-##" label="Date of Death" hint=""></q-input>
                             </div>
-                            <div class="col-4 q-py-sm q-px-sm">
-                              <q-input class="full-width" filled v-model="name.bio_filename" label="Bio Filename" hint=""></q-input>
+                            <div class="col-3 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.identifier" label="Identifier" hint=""></q-input>
                             </div>
-                            <div class="col-4 q-py-sm q-px-sm">
-                              <q-input class="full-width" filled v-model="name.keywords" label="Keywords" hint=""></q-input>
+                            <div class="col-3 q-py-sm q-px-sm">
+                              <q-input class="full-width" filled v-model="name.first_mention" label="First Mention" hint=""></q-input>
                             </div>
                           </div>
                       </q-tab-panel>
@@ -440,7 +454,7 @@
           <q-dialog v-model="showNameModal">
             <q-card style="min-width: 1000px;">
               <q-card-section>
-                <div class="text-h5 q-pa-xs text-center">{{this.name.name_key}}</div>
+                <div class="text-h5 q-pa-xs text-center">{{this.name.name_key}} <q-btn outline size="sm" padding="xs" icon="content_copy" @click="copyNameKey(name.name_key)"></q-btn></div>
               </q-card-section>
               
               <q-separator></q-separator>
@@ -487,14 +501,20 @@
                         <div class="row">
                           <div class="col-2 q-pa-sm text-bold text-left">Suffix:</div>
                           <div class="col-4 q-pa-sm text-left">{{name.suffix}}</div>
-                          <div class="col-2 q-pa-sm text-bold text-left">Keywords:</div>
-                          <div class="col-4 q-pa-sm text-left">{{name.keywords}}</div>
+                          <div class="col-2 q-pa-sm text-bold text-left">Identifier:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.identifier}}</div>
                         </div>
                         <div class="row">
                           <div class="col-2 q-pa-sm text-bold text-left">Variants:</div>
                           <div class="col-4 q-pa-sm text-left">{{name.variants}}</div>
                           <div class="col-2 q-pa-sm text-bold text-left">Professions:</div>
                           <div class="col-4 q-pa-sm text-left">{{name.professions}}</div>
+                        </div>
+                        <div class="row">
+                          <div class="col-2 q-pa-sm text-bold text-left">First Mention:</div>
+                          <div class="col-4 q-pa-sm text-left">{{name.first_mention}}</div>
+                          <div class="col-2 q-pa-sm text-bold text-left">&nbsp;</div>
+                          <div class="col-4 q-pa-sm text-left">&nbsp;</div>
                         </div>
                       </q-tab-panel>
                       <q-tab-panel name="notes">

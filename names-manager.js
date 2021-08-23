@@ -108,6 +108,23 @@ new Vue({
         name: null,
         names: []
       },
+      searchColumns: [
+        { 
+          name: 'name', 
+          label: 'NAME', 
+          field: row => (row.middle_name) ? row.family_name + ', ' +  row.given_name + ' ' + row.middle_name: row.family_name + ' ' + row.given_name,
+          format: val => `${val}`,
+          sortable: true 
+        },
+        { name: 'maiden_name', label: 'BIRTH NAME', field: 'maiden_name', sortable: true },
+        { name: 'birth', label: 'BIRTH', field: 'date_of_birth', sortable: true },
+        { name: 'death', label: 'DEATH', field: 'date_of_death', sortable: true },
+        { name: 'staff_notes', label: 'STAFF NOTES', field: 'staff_notes', sortable: true },
+        { name: 'name_key', label: 'KEY', field: 'name_key', sortable: true },
+        { name: 'first_mention', label: 'FIRST MENTION', field: 'first_mention', sortable: true },
+        { name: 'actions', label: '', field: '', align: 'center' },
+        
+      ],
       nameColumns: [
         { 
           name: 'name', 
@@ -174,14 +191,6 @@ new Vue({
           align: 'left',
           sortable: true 
         }
-        // { 
-        //   name: 'type', 
-        //   label: 'TYPE', 
-        //   field: 'type',
-        //   align: 'left',
-        //   sortable: true 
-        // },
-        // { name: 'actions', label: '', field: '', align: 'center' }
       ],
       pagination: {
         sortBy: 'desc',
@@ -209,6 +218,12 @@ new Vue({
       }
     }
   },
+  filters: {
+    truncate: function (value) {
+      if (!value) return ''
+      return (value.length < 25) ? value : value.substring(0, 25) + '...'
+    }
+  },
   watch: {
     drawerContent: function () {
       this.selectedNames = []
@@ -230,6 +245,14 @@ new Vue({
     }
   },
   methods: {
+    test (props) {
+      Quasar.copyToClipboard(props).then(() => {
+        this.$q.notify({
+          message: 'name-key copied to clipboard',
+          color: 'green'
+        }, this)
+      })
+    },
     async checkNameKey () {
       this.name.name_key = this.name.name_key.toLowerCase().replace(/\s/g, "").replace(/[!@#$%^&*`'";,<.>/?:+=_~(){}\[\]|\\]/g, "")
       const response = await axios.get(this.baseURL + 'names/name-key-available?q=' + this.name.name_key)
@@ -378,7 +401,7 @@ new Vue({
       this.drawerOpen = true
       if (this.searchOnlyMyProject) {
         try {
-          const response = await axios.get(this.baseURL + 'projects/1/names' + '?q=' + this.namesFilter)
+          const response = await axios.get(this.baseURL + 'projects/' + this.project + '/names' + '?q=' + this.namesFilter)
           this.searchResultsData = response.data
         } catch (error) {
           console.error(error)
@@ -395,15 +418,9 @@ new Vue({
         this.loading = false
         this.searchResultsLoading = false
       }
-
-      // setTimeout(() => { 
-      //   this.loading = false
-      //   this.searchResultsLoading = false
-      //   this.searchResultsData = (this.searchOnlyMyProject) ? this.projectNameData : this.nameData
-      // }, 1500)
     },
-    copyNameKey (event, row) {
-      Quasar.copyToClipboard(row.name_key).then(() => {
+    copyNameKey (name_key) {
+      Quasar.copyToClipboard(name_key).then(() => {
         this.$q.notify({
           message: 'name-key copied to clipboard',
           color: 'green'
@@ -768,7 +785,7 @@ new Vue({
     async getNames() {
       this.loadingNames = true
       try {
-        const response = await axios.get(this.baseURL + 'names');
+        const response = await axios.get(this.baseURL + 'names' + '?per_page=10000');
         this.nameData = response.data.data
       } catch (error) {
         console.error(error)
@@ -778,7 +795,7 @@ new Vue({
     async getProjectNames() {
       this.loadingNames = true
       try {
-        const response = await axios.get(this.baseURL + 'projects/1/names' + '?per_page=1000');
+        const response = await axios.get(this.baseURL + 'projects/' + this.project + '/names' + '?per_page=10000');
         this.projectNameData = response.data
       } catch (error) {
         console.error(error)
