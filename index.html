@@ -26,7 +26,7 @@
             <div class="col-12 q-pa-md">
 
               <template v-if="drawerContent === 'search'">
-                <q-table class="q-ma-sm" title="Search Results" selection="multiple" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="searchColumns" row-key="id" :pagination="defaultPagination">
+                <q-table class="q-ma-sm" title="Search Results" selection="multiple" @request="search" :selected.sync="selectedNames" :data="searchResultsData" :loading="searchResultsLoading" :columns="searchColumns" row-key="id" :pagination.sync="searchResultsPagination">
                   <template v-slot:top-right>
                     <q-btn color="primary" label="Add Selected to Project" class="q-ma-sm" @click="addProjectNames()" :disabled="selectedNames.length === 0"></q-btn>
                     <q-btn color="primary" label="Add Selected to Group" class="q-ma-sm" @click="showAddToGroupModal = true" :disabled="selectedNames.length === 0"></q-btn>
@@ -52,20 +52,18 @@
               </template>
         
               <template v-else-if="drawerContent === 'names'">
-                <q-table class="q-ma-sm" title="Names" selection="multiple" @row-dblclick="viewName" :selected.sync="selectedProjectNames" :data="projectNameData" :columns="nameColumns" :filter-method="projectNamesFilterMethod" :filter="projectNamesFilter" row-key="id" :loading="loadingNames" :pagination="defaultPagination">
+                <q-table class="q-ma-sm" title="Names" selection="multiple" @request="getProjectNamesDrawer" @row-dblclick="viewName" :selected.sync="selectedProjectNames" :data="projectNameDrawerData" :columns="nameColumns" :filter-method="projectNamesFilterMethod" :filter="projectNamesFilter" row-key="id" :loading="loadingNames" :pagination.sync="thisProjectsNamesDrawerPagination">
                   <template v-slot:top-right>
-                    <q-input filled dense debounce="300" v-model="projectNamesFilter" placeholder="Search" class="q-ma-sm">
+                    <!-- <q-input filled dense debounce="300" v-model="projectNamesFilter" placeholder="Search" class="q-ma-sm">
                       <template v-slot:append><q-icon name="search"></q-icon></template>
-                    </q-input>
+                    </q-input> -->
+                    <q-btn color="primary" label="Remove Selected from Project" class="q-ma-md" @click="removeProjectNames()"></q-btn>
                     <q-btn round flat icon="note_add" class="q-ma-sm" @click="editName()">
                       <q-tooltip>Create New</q-tooltip>
                     </q-btn>
                     <q-btn round flat icon="refresh" @click="getNames()" :loading="loadingNames" class="q-ma-sm">
                       <q-tooltip>Refresh List</q-tooltip>
                     </q-btn>
-                  </template>
-                  <template v-slot:bottom>
-                    <q-btn color="primary" label="Remove Selected from Project" class="q-ma-md" @click="removeProjectNames()"></q-btn>
                   </template>
                 </q-table>
               </template>
@@ -128,8 +126,8 @@
 
               <div class="row q-py-xs q-px-md">
                 <a href="index.html">Project Home</a> &nbsp;|&nbsp;
-                <a @click="openDrawer('names')" href="#">Project Names</a> &nbsp;|&nbsp;
-                <a @click="openDrawer('subjects')" href="#">Project Subjects</a> <!-- &nbsp;|&nbsp; -->
+                <a @click="openDrawer('names')" href="#">Project Names</a> <!-- &nbsp;|&nbsp; -->
+                <!-- <a @click="openDrawer('subjects')" href="#">Project Subjects</a> &nbsp;|&nbsp; -->
                 <!-- <a @click="openDrawer('aliases')" href="#">Project Aliases</a> &nbsp; -->
               </div>
 
@@ -145,7 +143,7 @@
                 <q-input class="q-pa-sm col-4" label="Search" bg-color="white" v-model="namesFilter" outlined>
                   <template v-slot:append><q-icon name="search"></q-icon></template>
                 </q-input>
-                <q-btn color="primary" label="Search" class="q-ma-md" @click="search()"></q-btn>
+                <q-btn color="primary" label="Search" class="q-ma-md" @click="search"></q-btn>
                 <q-toggle v-model="searchOnlyMyProject" label="limit search to my project"></q-toggle>
               </div>
               
@@ -160,7 +158,7 @@
             </div>
             <div class="col-6 q-pa-md">
 
-              <q-table class="q-ma-sm" title="RECENTLY ADDED NAMES" @row-dblclick="viewName" :data="nameData" :columns="nameColumns" row-key="name" :loading="loadingNames" no-results-label="No results found" no-data-label="No results found">
+              <q-table class="q-ma-sm" title="RECENTLY ADDED NAMES" @request="getNames" @row-dblclick="viewName" :data="nameData" :columns="nameColumns" row-key="name" :loading="loadingNames" no-results-label="No results found" no-data-label="No results found" :pagination.sync="recentlyAddedNamesPagination">
                 <template v-slot:top-right>
                   <q-btn round flat icon="refresh" @click="getNames()" :loading="loadingNames" class="q-ma-sm">
                     <q-tooltip>Refresh List</q-tooltip>
@@ -168,7 +166,7 @@
                 </template>
               </q-table>
 
-              <q-table class="q-ma-sm" title="THIS PROJECT'S NAMES" @row-dblclick="viewName" :data="projectNameData" :columns="nameColumns" row-key="name" :loading="loadingNames" no-results-label="No results found" no-data-label="No results found">
+              <q-table class="q-ma-sm" title="THIS PROJECT'S NAMES" @request="getProjectNames" @row-dblclick="viewName" :data="projectNameData" :columns="nameColumns" row-key="name" :loading="loadingNames" no-results-label="No results found" no-data-label="No results found" :pagination.sync="thisProjectsNamesPagination">
                 <template v-slot:top-right>
                   <q-btn round flat icon="refresh" @click="getNames()" :loading="loadingNames" class="q-ma-sm">
                     <q-tooltip>Refresh List</q-tooltip>

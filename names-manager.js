@@ -3,7 +3,7 @@ new Vue({
   data: function () {
     return {
       tabNameNotes: 'public',
-      project: 1,
+      project: null,
       splitterModel: 15,
       nameTab: 'general',
       model: '',
@@ -196,7 +196,36 @@ new Vue({
         sortBy: 'desc',
         descending: false,
         page: 1,
-        rowsPerPage: 50
+        rowsPerPage: 5,
+        rowsNumber: 1
+      },
+      searchResultsPagination: {
+        sortBy: 'desc',
+        descending: false,
+        page: 1,
+        rowsPerPage: 5,
+        rowsNumber: 1
+      },
+      recentlyAddedNamesPagination: {
+        sortBy: 'desc',
+        descending: false,
+        page: 1,
+        rowsPerPage: 5,
+        rowsNumber: 1
+      },
+      thisProjectsNamesPagination: {
+        sortBy: 'desc',
+        descending: false,
+        page: 1,
+        rowsPerPage: 5,
+        rowsNumber: 1
+      },
+      thisProjectsNamesDrawerPagination: {
+        sortBy: 'desc',
+        descending: false,
+        page: 1,
+        rowsPerPage: 10,
+        rowsNumber: 1
       },
       defaultPagination: {
         rowsPerPage: 10
@@ -205,6 +234,7 @@ new Vue({
       nameData: [],
       subjectData: [],
       projectNameData: [],
+      projectNameDrawerData: [],
       aliasData: [],
       nameKeyAvailable: false
     }
@@ -245,14 +275,6 @@ new Vue({
     }
   },
   methods: {
-    test (props) {
-      Quasar.copyToClipboard(props).then(() => {
-        this.$q.notify({
-          message: 'name-key copied to clipboard',
-          color: 'green'
-        }, this)
-      })
-    },
     async checkNameKey () {
       this.name.name_key = this.name.name_key.toLowerCase().replace(/\s/g, "").replace(/[!@#$%^&*`'";,<.>/?:+=_~(){}\[\]|\\]/g, "")
       const response = await axios.get(this.baseURL + 'names/name-key-available?q=' + this.name.name_key)
@@ -393,7 +415,15 @@ new Vue({
         }
       })
     },
-    async search () {
+    async search (props = null) {
+      console.log(props)
+      if (!props.pagination) {
+        var page = this.searchResultsPagination.page
+        var rowsPerPage = this.searchResultsPagination.rowsPerPage
+      }else{
+        var { page, rowsPerPage, sortBy, descending } = props.pagination
+      }
+
       this.drawerContent = 'search'
       this.loading = true
       this.searchResultsData = []
@@ -401,8 +431,13 @@ new Vue({
       this.drawerOpen = true
       if (this.searchOnlyMyProject) {
         try {
-          const response = await axios.get(this.baseURL + 'projects/' + this.project + '/names' + '?q=' + this.namesFilter)
-          this.searchResultsData = response.data
+          const response = await axios.get(this.baseURL + 'projects/' + this.project + '/names' + '?per_page=' + rowsPerPage + '&page=' + page + '&q=' + this.namesFilter)
+          this.searchResultsData = response.data.data
+
+          this.searchResultsPagination.rowsNumber = response.data.meta.total
+          this.searchResultsPagination.page = page
+          this.searchResultsPagination.rowsPerPage = rowsPerPage
+
         } catch (error) {
           console.error(error)
         }
@@ -410,8 +445,13 @@ new Vue({
         this.searchResultsLoading = false
       }else{
         try {
-          const response = await axios.get(this.baseURL + 'names' + '?q=' + this.namesFilter)
+          const response = await axios.get(this.baseURL + 'names' + '?per_page=' + rowsPerPage + '&page=' + page + '&q=' + this.namesFilter)
           this.searchResultsData = response.data.data
+
+
+          this.searchResultsPagination.rowsNumber = response.data.meta.total
+          this.searchResultsPagination.page = page
+          this.searchResultsPagination.rowsPerPage = rowsPerPage          
         } catch (error) {
           console.error(error)
         }
@@ -782,21 +822,64 @@ new Vue({
       this.drawerContent = type
       this.drawerOpen = true
     },
-    async getNames() {
+    async getNames(props = null) {
+      if (!props) {
+        var page = this.recentlyAddedNamesPagination.page
+        var rowsPerPage = this.recentlyAddedNamesPagination.rowsPerPage
+      }else{
+        var { page, rowsPerPage, sortBy, descending } = props.pagination
+      }
+      
       this.loadingNames = true
       try {
-        const response = await axios.get(this.baseURL + 'names' + '?per_page=10000');
-        this.nameData = response.data.data
+        var response = await axios.get(this.baseURL + 'names' + '?per_page=' + rowsPerPage + '&page=' + page);
+        this.nameData = [...response.data.data]
+
+        this.recentlyAddedNamesPagination.rowsNumber = response.data.meta.total
+        this.recentlyAddedNamesPagination.page = page
+        this.recentlyAddedNamesPagination.rowsPerPage = rowsPerPage
       } catch (error) {
         console.error(error)
       }
       this.loadingNames = false
     },
-    async getProjectNames() {
+    async getProjectNames(props = null) {
+      if (!props) {
+        var page = this.thisProjectsNamesPagination.page
+        var rowsPerPage = this.thisProjectsNamesPagination.rowsPerPage
+      }else{
+        var { page, rowsPerPage, sortBy, descending } = props.pagination
+      }
+      
       this.loadingNames = true
       try {
-        const response = await axios.get(this.baseURL + 'projects/' + this.project + '/names' + '?per_page=10000');
-        this.projectNameData = response.data
+        const response = await axios.get(this.baseURL + 'projects/' + this.project + '/names' + '?per_page=' + rowsPerPage + '&page=' + page);
+        this.projectNameData = [...response.data.data]
+
+        this.thisProjectsNamesPagination.rowsNumber = response.data.meta.total
+        this.thisProjectsNamesPagination.page = page
+        this.thisProjectsNamesPagination.rowsPerPage = rowsPerPage
+      } catch (error) {
+        console.error(error)
+      }
+      this.loadingNames = false
+    },
+    async getProjectNamesDrawer(props = null) {
+      if (!props) {
+        var page = this.thisProjectsNamesDrawerPagination.page
+        var rowsPerPage = this.thisProjectsNamesDrawerPagination.rowsPerPage
+      }else{
+        var { page, rowsPerPage, sortBy, descending } = props.pagination
+      }
+      
+      this.loadingNames = true
+      try {
+        const response = await axios.get(this.baseURL + 'projects/' + this.project + '/names' + '?per_page=' + rowsPerPage + '&page=' + page);
+        this.projectNameDrawerData = [...response.data.data]
+
+        this.thisProjectsNamesDrawerPagination.rowsNumber = response.data.meta.total
+        this.thisProjectsNamesDrawerPagination.page = page
+        this.thisProjectsNamesDrawerPagination.rowsPerPage = rowsPerPage
       } catch (error) {
         console.error(error)
       }
@@ -804,7 +887,7 @@ new Vue({
     },
     async getSubjects() {
       try {
-        const response = await axios.get(this.baseURL + 'subjects' + '?per_page=100000');
+        const response = await axios.get(this.baseURL + 'subjects' + '?per_page=100');
         this.subjectData = response.data.data
       } catch (error) {
         console.error(error)
@@ -813,7 +896,7 @@ new Vue({
     async getGroups() {
       this.loadingGroups = true
       try {
-        const response = await axios.get(this.baseURL + 'lists' + '?per_page=100000');
+        const response = await axios.get(this.baseURL + 'lists' + '?per_page=100');
         this.groupData = response.data.data
       } catch (error) {
         console.error(error)
@@ -823,17 +906,27 @@ new Vue({
     async getAliases() {
       this.loadingAliases = true
       try {
-        const response = await axios.get(this.baseURL + 'aliases' + '?per_page=10000');
+        const response = await axios.get(this.baseURL + 'aliases' + '?per_page=100');
         this.aliasData = response.data.data
       } catch (error) {
         console.error(error)
       }
       this.loadingAliases = false
+    },
+    async getProject() {
+      try {
+        const response = await axios.get(this.baseURL + 'projects/whoami');
+        this.project = response.data
+      } catch (error) {
+        console.error(error)
+      }
     }
   },
-  created () {
+  async created () {
+    await this.getProject()
     this.getNames()
     this.getProjectNames()
+    this.getProjectNamesDrawer()
     this.getGroups()
     this.getAliases()
     this.getSubjects()
